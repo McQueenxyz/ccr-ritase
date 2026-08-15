@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>CCR — Laporan Ritase</title>
+  <meta name="theme-color" content="#1466d6" />
+  <link rel="icon" href="assets/logo.png" />
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+  <div id="app"></div>
+
+  <!-- Library Supabase (dipakai hanya saat APP_MODE = "supabase").
+       Aman diabaikan saat mode lokal. -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- SheetJS (lokal, offline) — untuk Export Excel format SS6 -->
+  <script src="assets/vendor/xlsx.full.min.js"></script>
+
+  <!-- Kode aplikasi -->
+  <script src="config.js"></script>
+  <script src="assets/seed.js"></script>
+  <script src="assets/ss6-codes.js"></script>
+  <script src="assets/store.js"></script>
+  <script src="assets/app.js"></script>
+</body>
+</html>
