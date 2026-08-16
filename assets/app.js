@@ -72,10 +72,8 @@
   const BRAND = { whatsapp: 1, instagram: 1, x: 1, threads: 1, facebook: 1, linkedin: 1, youtube: 1, behance: 1 };
   function icon(name, size) { const inner = ICONS[name] || ""; const s = size || 20; return `<svg class="ic${BRAND[name] ? " brand" : ""}" viewBox="0 0 24 24" width="${s}" height="${s}" aria-hidden="true">${inner}</svg>`; }
 
-  /* ---------- theme ---------- */
-  function initTheme() { document.documentElement.setAttribute("data-theme", localStorage.getItem("hpr_theme") || "light"); }
-  function toggleTheme() { const c = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark"; document.documentElement.setAttribute("data-theme", c); localStorage.setItem("hpr_theme", c); }
-  const themeIcon = () => (document.documentElement.getAttribute("data-theme") === "dark" ? icon("sun") : icon("moon"));
+  /* ---------- theme: IKUT PERANGKAT (prefers-color-scheme), tanpa toggle ---------- */
+  function initTheme() { document.documentElement.removeAttribute("data-theme"); localStorage.removeItem("hpr_theme"); }
 
   /* ---------- appbar & modal ---------- */
   function appbar(o = {}) {
@@ -85,7 +83,6 @@
       ${o.crumb ? `<span class="crumb">${esc(o.crumb)}</span>` : ""}
       <span class="spacer"></span>
       <span class="mode-badge ${Store.mode}">${Store.mode === "supabase" ? "ONLINE" : "LOKAL"}</span>
-      <button class="iconbtn" data-act="theme" title="Ganti tema">${themeIcon()}</button>
       ${o.menu ? `<button class="iconbtn" data-act="go-menu" title="Menu">${icon("menu")}</button>` : ""}
       ${o.logout ? `<button class="iconbtn" data-act="logout" title="Keluar">${icon("logout")}</button>` : ""}
     </div>`;
@@ -127,19 +124,45 @@
 
   /* ---------- LOGIN ---------- */
   function renderLogin() {
-    app.innerHTML = `<div class="login-wrap"><div class="login-card card beam-host">
-      <div class="beam-glow" aria-hidden="true"></div><div class="beam-ring" aria-hidden="true"></div>
-      <div class="brand"><h2>TEAM LOGIN</h2><div class="sub">Laporan Ritase — ${esc(CFG.COMPANY)}</div></div>
-      <div class="field"><label>NRP</label><input id="nrp" placeholder="Masukkan NRP" /></div>
-      <div class="field"><label>Password</label><input id="pw" type="password" placeholder="Password" /></div>
-      <button class="btn primary block" data-act="login">ENTER</button>
-      <div class="hint">${Store.mode === "supabase" ? "Login memakai akun Supabase." : "Mode LOKAL: NRP bebas, password default: <b>admin</b>"}</div>
-      <button class="iconbtn" data-act="theme" style="margin-top:14px">${themeIcon()}</button>
+    const hint = Store.mode === "supabase" ? "Login memakai akun Supabase." : "Mode lokal — password default: admin";
+    app.innerHTML = `<div class="login-wrap"><div class="login-box">
+      <div class="login-logo"><img src="assets/logo.png" alt="CCR" /></div>
+      <h1 class="login-title">Masuk dengan Akun CCR</h1>
+      <div id="acct-badge" class="acct-badge hidden"></div>
+      <form id="login-form" autocomplete="off" novalidate>
+        <div class="login-field">
+          <input id="lg-input" class="login-input" placeholder="Masukkan Nrp" inputmode="numeric" autocomplete="off" />
+          <button type="submit" id="lg-arrow" class="login-arrow" aria-label="Lanjut">${icon("next", 16)}</button>
+        </div>
+        <button type="submit" id="lg-login" class="btn primary block login-btn hidden">Login</button>
+      </form>
+      <div id="lg-back" class="login-back hidden"><a data-act="lg-reset">‹ Ganti NRP</a></div>
+      <div class="login-hint">${hint}</div>
+      <div class="login-foot">Hak Cipta © 2026 CCR · PT Antareja Mahada Makmur — Site Vale</div>
     </div></div>`;
-    const go = async () => { try { state.user = await Store.signIn(document.getElementById("nrp").value.trim(), document.getElementById("pw").value); location.hash = "#/"; route(); } catch (e) { toast(e.message); } };
-    document.querySelector('[data-act="login"]').onclick = go;
-    document.getElementById("pw").addEventListener("keydown", (e) => { if (e.key === "Enter") go(); });
-    initLoginBeam();
+    let nrp = "", step = "nrp";
+    const $ = (id) => document.getElementById(id);
+    const input = $("lg-input"), arrow = $("lg-arrow"), loginBtn = $("lg-login"), badge = $("acct-badge"), back = $("lg-back");
+    function toPw() {
+      nrp = input.value.trim(); if (!nrp) { input.focus(); return; }
+      step = "pw";
+      badge.textContent = "NRP " + nrp; badge.classList.remove("hidden"); back.classList.remove("hidden");
+      input.type = "password"; input.value = ""; input.placeholder = "Password";
+      arrow.classList.add("hidden"); loginBtn.classList.remove("hidden"); input.focus();
+    }
+    function toNrp() {
+      step = "nrp"; nrp = "";
+      badge.classList.add("hidden"); back.classList.add("hidden");
+      input.type = "text"; input.value = ""; input.placeholder = "Masukkan Nrp";
+      arrow.classList.remove("hidden"); loginBtn.classList.add("hidden"); input.focus();
+    }
+    async function doLogin() {
+      try { state.user = await Store.signIn(nrp, input.value); location.hash = "#/"; route(); }
+      catch (e) { toast(e.message); input.focus(); if (input.select) input.select(); }
+    }
+    $("login-form").addEventListener("submit", (e) => { e.preventDefault(); if (step === "nrp") toPw(); else doLogin(); });
+    back.querySelector("[data-act='lg-reset']").addEventListener("click", (e) => { e.preventDefault(); toNrp(); });
+    setTimeout(() => input.focus(), 30);
   }
 
   /* Animator border-beam: sudut diputar dengan kecepatan yang di-spring saat hover.
@@ -715,7 +738,6 @@
     const act = el.getAttribute("data-act"), id = el.getAttribute("data-id");
     const LID = app._loaderId;
     switch (act) {
-      case "theme": toggleTheme(); route(); break;
       case "back": history.back(); break;
       case "go-menu": location.hash = "#/"; break;
       case "nav": location.hash = el.getAttribute("data-to"); break;
