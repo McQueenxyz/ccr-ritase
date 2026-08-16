@@ -37,7 +37,9 @@
     // --- auth ---
     async signIn(nrp, password) {
       if (!nrp) throw new Error("NRP wajib diisi");
-      if (password !== "admin") throw new Error("Password salah (default: admin)");
+      const accts = (CFG && CFG.ACCOUNTS) || {};
+      const expected = Object.prototype.hasOwnProperty.call(accts, String(nrp)) ? accts[String(nrp)] : "admin";
+      if (password !== expected) throw new Error("Password salah");
       const db = this._load(); db.session = { nrp, nama: nrp, at: Date.now() }; this._save(db); return db.session;
     },
     async signOut() { const db = this._load(); db.session = null; this._save(db); },

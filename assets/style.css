@@ -163,8 +163,10 @@ tbody tr:hover td.empty{background:transparent;}
 .login-arrow{position:absolute; right:9px; top:50%; transform:translateY(-50%); width:32px; height:32px; border-radius:50%; border:1px solid var(--border); background:var(--surface); color:var(--muted); display:inline-flex; align-items:center; justify-content:center; cursor:pointer; transition:.16s var(--ease);}
 .login-arrow:hover{background:var(--primary); border-color:var(--primary); color:#fff;}
 .login-arrow:active{transform:translateY(-50%) scale(.94);}
-.login-btn{margin-top:14px; height:50px; font-size:17px;}
-.login-back{margin-top:16px; font-size:14px;}
+.login-btn{margin-top:16px; height:50px; font-size:17px;}
+.login-err{display:flex; align-items:flex-start; gap:7px; text-align:left; color:var(--danger); font-size:13px; line-height:1.4; margin-top:11px;}
+.login-err::before{content:"!"; flex:none; width:16px; height:16px; margin-top:1px; border-radius:50%; background:var(--danger); color:#fff; font-size:11px; font-weight:700; display:inline-flex; align-items:center; justify-content:center;}
+.login-back{text-align:left; margin-top:12px; font-size:14px;}
 .login-back a{color:var(--primary); cursor:pointer; text-decoration:none;}
 .login-back a:hover{text-decoration:underline;}
 .login-hint{margin-top:20px; font-size:12px; color:var(--faint);}

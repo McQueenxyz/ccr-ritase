@@ -127,39 +127,43 @@
     const hint = Store.mode === "supabase" ? "Login memakai akun Supabase." : "Mode lokal — password default: admin";
     app.innerHTML = `<div class="login-wrap"><div class="login-box">
       <div class="login-logo"><img src="assets/logo.png" alt="CCR" /></div>
-      <h1 class="login-title">Masuk dengan Akun CCR</h1>
+      <h1 class="login-title">Masuk dengan<br>Akun CCR</h1>
       <div id="acct-badge" class="acct-badge hidden"></div>
       <form id="login-form" autocomplete="off" novalidate>
         <div class="login-field">
           <input id="lg-input" class="login-input" placeholder="Masukkan Nrp" inputmode="numeric" autocomplete="off" />
           <button type="submit" id="lg-arrow" class="login-arrow" aria-label="Lanjut">${icon("next", 16)}</button>
         </div>
+        <div id="lg-err" class="login-err hidden">Periksa informasi akun yang Anda masukkan dan coba lagi.</div>
+        <div id="lg-back" class="login-back hidden"><a data-act="lg-reset">‹ Ganti NRP</a></div>
         <button type="submit" id="lg-login" class="btn primary block login-btn hidden">Login</button>
       </form>
-      <div id="lg-back" class="login-back hidden"><a data-act="lg-reset">‹ Ganti NRP</a></div>
       <div class="login-hint">${hint}</div>
       <div class="login-foot">Hak Cipta © 2026 CCR · PT Antareja Mahada Makmur — Site Vale</div>
     </div></div>`;
     let nrp = "", step = "nrp";
     const $ = (id) => document.getElementById(id);
-    const input = $("lg-input"), arrow = $("lg-arrow"), loginBtn = $("lg-login"), badge = $("acct-badge"), back = $("lg-back");
+    const input = $("lg-input"), arrow = $("lg-arrow"), loginBtn = $("lg-login"), badge = $("acct-badge"), back = $("lg-back"), err = $("lg-err");
+    const showErr = (on) => err.classList.toggle("hidden", !on);
     function toPw() {
       nrp = input.value.trim(); if (!nrp) { input.focus(); return; }
-      step = "pw";
+      step = "pw"; showErr(false);
       badge.textContent = "NRP " + nrp; badge.classList.remove("hidden"); back.classList.remove("hidden");
-      input.type = "password"; input.value = ""; input.placeholder = "Password";
+      input.type = "password"; input.value = ""; input.placeholder = "Password"; input.setAttribute("inputmode", "text");
       arrow.classList.add("hidden"); loginBtn.classList.remove("hidden"); input.focus();
     }
     function toNrp() {
-      step = "nrp"; nrp = "";
+      step = "nrp"; nrp = ""; showErr(false);
       badge.classList.add("hidden"); back.classList.add("hidden");
-      input.type = "text"; input.value = ""; input.placeholder = "Masukkan Nrp";
+      input.type = "text"; input.value = ""; input.placeholder = "Masukkan Nrp"; input.setAttribute("inputmode", "numeric");
       arrow.classList.remove("hidden"); loginBtn.classList.add("hidden"); input.focus();
     }
     async function doLogin() {
+      showErr(false);
       try { state.user = await Store.signIn(nrp, input.value); location.hash = "#/"; route(); }
-      catch (e) { toast(e.message); input.focus(); if (input.select) input.select(); }
+      catch (e) { showErr(true); input.focus(); if (input.select) input.select(); }
     }
+    input.addEventListener("input", () => showErr(false));
     $("login-form").addEventListener("submit", (e) => { e.preventDefault(); if (step === "nrp") toPw(); else doLogin(); });
     back.querySelector("[data-act='lg-reset']").addEventListener("click", (e) => { e.preventDefault(); toNrp(); });
     setTimeout(() => input.focus(), 30);
