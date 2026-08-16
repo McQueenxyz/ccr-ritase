@@ -217,9 +217,9 @@
     const it = (to, ic, label, act) => `<div class="nav-item ${(act ? false : (to === "#/" ? isHome : h.startsWith(to))) ? "active" : ""}" data-to="${to || ""}">${icon(ic, 20)}<span>${label}</span></div>`;
     return `
       ${it("#/", "grid", "Dashboard")}
-      ${it("#/form", "truck", "Form Ritase")}
+      ${it("#/form", "box", "Form Ritase")}
       ${it("#/report", "chat", "Report")}
-      <div class="nav-grp"><div class="nav-gh">${icon("box", 18)}<span>Unit</span></div>
+      <div class="nav-grp"><div class="nav-gh">${icon("truck", 18)}<span>Unit</span></div>
         <div class="nav-sub" data-to="#/unit">Daftar Populasi Unit</div>
         <div class="nav-sub" data-to="#/unit/add">Tambah Unit</div></div>
       <div class="nav-grp"><div class="nav-gh">${icon("alert", 18)}<span>Delay</span></div>
