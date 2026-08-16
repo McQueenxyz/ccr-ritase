@@ -205,7 +205,7 @@ tbody tr:hover td.empty{background:transparent;}
 .mx-row .ld{font-weight:600; font-size:13px; white-space:nowrap; padding-right:4px; color:var(--muted);}
 /* Papan Shift: sel = BAR waktu 60' seragam (worked/delay/idle) */
 .ccell{display:flex; flex-direction:column; align-items:center; gap:3px; min-width:0;}
-.cbar{position:relative; width:100%; max-width:32px; height:44px; border-radius:7px; overflow:hidden; cursor:pointer; background:var(--surface-2); border:1px solid var(--border); transition:box-shadow .14s var(--ease);}
+.cbar{position:relative; width:100%; max-width:32px; height:100px; border-radius:8px; overflow:hidden; cursor:pointer; background:var(--surface-2); border:1px solid var(--border); transition:box-shadow .14s var(--ease);}
 .cbar.now{box-shadow:0 0 0 2px var(--warning) inset;}
 .cbar:hover{box-shadow:0 0 0 2px var(--primary) inset;}
 .cbar-fill{position:absolute; inset:0; display:flex; flex-direction:column-reverse;}
