@@ -749,17 +749,21 @@
   /* ---------- SETTING ---------- */
   function renderSetting() {
     const m = state.master;
-    const ed = (title, key, val) => `<div class="card ms-card"><div class="ms-h">${esc(title)}</div><textarea id="set-${key}" rows="4">${esc(val != null ? val : (m[key] || []).join("\n"))}</textarea><div class="hint">Satu item per baris.</div></div>`;
+    const ed = (title, key, val) => {
+      const v = val != null ? val : (m[key] || []).join("\n");
+      const n = v.split("\n").filter((s) => s.trim()).length;
+      return `<div class="card ms-card"><div class="ms-h"><span>${esc(title)}</span><span class="chip">${n}</span></div><textarea id="set-${key}" rows="4">${esc(v)}</textarea></div>`;
+    };
+    const group = (title, cards) => `<div class="ms-group"><div class="ms-gh">${esc(title)}</div><div class="ms-grid">${cards}</div></div>`;
     app.innerHTML = `${appbar({ crumb: "Setting" })}<div class="container">
       <div class="page-head"><div class="page-title">Data Master</div>
         <div class="actions"><button class="btn" data-act="reset-master">Default</button><button class="btn primary" data-act="save-master">${icon("save", 18)} Simpan</button></div></div>
-      <div class="ms-grid">
-        ${ed("Materials", "materials")}${ed("Disposals", "disposals")}${ed("Grade", "grades")}
-        ${ed("Problems", "problems")}${ed("Idle", "idle")}${ed("Delay", "delay")}
-        ${ed("Area", "areas")}${ed("PIT", "pits")}
-        ${ed("GL Pit", "gl_pit")}${ed("GL Road", "gl_road")}${ed("GL Disposal", "gl_disposal")}
-        ${ed("Loaders", "loaders", (m.loaders || []).map((l) => l.kode).join("\n"))}
-      </div></div>`;
+      ${group("Produksi", ed("Materials", "materials") + ed("Disposals / Dump", "disposals") + ed("Grade Ore", "grades"))}
+      ${group("Loss / Kendala", ed("Problems (Prdty)", "problems") + ed("Idle", "idle") + ed("Delay", "delay"))}
+      ${group("Lokasi & Pengawas", ed("Area", "areas") + ed("PIT", "pits") + ed("GL Pit", "gl_pit") + ed("GL Road", "gl_road") + ed("GL Disposal", "gl_disposal"))}
+      ${group("Unit", ed("Loaders (Exca)", "loaders", (m.loaders || []).map((l) => l.kode).join("\n")))}
+      <div class="hint" style="margin-top:6px">Satu item per baris. Klik <b>Simpan</b> untuk menyimpan perubahan.</div>
+    </div>`;
   }
   async function saveMaster() {
     const m = state.master;

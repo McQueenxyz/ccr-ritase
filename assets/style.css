@@ -310,10 +310,70 @@ body{ background:
 .sect .table-wrap table{background:transparent;}
 
 /* Setting: grid kartu master */
-.ms-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:12px;}
-@media (max-width:640px){.ms-grid{grid-template-columns:1fr;}}
+.ms-group{margin-bottom:22px;}
+.ms-gh{font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); font-weight:600; margin:0 2px 10px;}
+.ms-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:12px;}
+@media (max-width:900px){.ms-grid{grid-template-columns:repeat(2,1fr);}}
+@media (max-width:600px){.ms-grid{grid-template-columns:1fr;}}
 .ms-card{padding:14px;}
-.ms-h{font-weight:600; font-size:13px; margin-bottom:10px;}
-.ms-card textarea{font-size:14px;}
+.ms-h{display:flex; align-items:center; justify-content:space-between; font-weight:600; font-size:13px; margin-bottom:10px;}
+.ms-card textarea{font-size:14px; resize:vertical;}
+
+/* ============================================================
+   LIQUID GLASS (iOS) — permukaan translusen, blur, rim highlight
+   ============================================================ */
+:root{
+  --glass:rgba(255,255,255,.58); --glass-strong:rgba(255,255,255,.74);
+  --glass-brd:rgba(255,255,255,.65); --glass-hi:rgba(255,255,255,.55);
+  --glass-blur:saturate(180%) blur(20px);
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+  --glass:rgba(30,30,34,.5); --glass-strong:rgba(30,30,34,.66);
+  --glass-brd:rgba(255,255,255,.12); --glass-hi:rgba(255,255,255,.08);
+}}
+[data-theme="dark"]{
+  --glass:rgba(30,30,34,.5); --glass-strong:rgba(30,30,34,.66);
+  --glass-brd:rgba(255,255,255,.12); --glass-hi:rgba(255,255,255,.08);
+}
+/* backdrop lembut (blob warna) supaya efek kaca terlihat */
+body{
+  background:
+    radial-gradient(52% 42% at 12% -2%, rgba(0,102,204,.12), transparent 60%),
+    radial-gradient(46% 40% at 100% 6%, rgba(52,199,89,.10), transparent 58%),
+    radial-gradient(58% 46% at 50% 104%, rgba(255,204,0,.09), transparent 60%),
+    var(--bg);
+  background-attachment:fixed;
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) body{
+  background:
+    radial-gradient(52% 42% at 12% -2%, rgba(10,132,255,.18), transparent 60%),
+    radial-gradient(46% 40% at 100% 6%, rgba(48,209,88,.13), transparent 58%),
+    radial-gradient(58% 46% at 50% 104%, rgba(255,214,10,.08), transparent 60%),
+    var(--bg);
+  background-attachment:fixed;
+}}
+[data-theme="dark"] body{
+  background:
+    radial-gradient(52% 42% at 12% -2%, rgba(10,132,255,.18), transparent 60%),
+    radial-gradient(46% 40% at 100% 6%, rgba(48,209,88,.13), transparent 58%),
+    radial-gradient(58% 46% at 50% 104%, rgba(255,214,10,.08), transparent 60%),
+    var(--bg);
+  background-attachment:fixed;
+}
+/* permukaan kaca */
+.appbar, .card, .modal, .drawer, .banner, .stat, .dcard, .papan, .list-row,
+.xselect .panel, .table-wrap, .bcta, .iconbtn, .btn:not(.primary):not(.success):not(.danger){
+  background:var(--glass-strong);
+  -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur);
+  border-color:var(--glass-brd);
+}
+/* rim highlight tepi atas (kesan kaca) */
+.card, .modal, .banner, .stat, .dcard, .papan, .list-row, .appbar, .drawer, .table-wrap{
+  box-shadow: inset 0 1px 0 var(--glass-hi), var(--shadow);
+}
+.card.lift:hover, .list-row:hover, .stat:hover, .dcard:hover{ box-shadow: inset 0 1px 0 var(--glass-hi), var(--shadow-lg); }
+thead th{ background:color-mix(in srgb, var(--surface-2) 55%, transparent); }
+/* appbar menempel di atas → kaca lebih kuat */
+.appbar{ background:var(--glass-strong); border-bottom:1px solid var(--glass-brd); }
 
 @media (prefers-reduced-motion:reduce){ *{animation-duration:.001ms !important; transition:none !important;} }
