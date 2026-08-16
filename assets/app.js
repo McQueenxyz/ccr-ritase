@@ -410,7 +410,7 @@
           const grad = hasData ? `background:linear-gradient(to top,#34c759 0 ${wp}%,#ffcc00 ${wp}% ${fp}%,transparent ${fp}% 100%);` : "";
           const parts = (lo.items || []).map((x) => `${x.cat} ${Math.round(x.dur)}'${x.rem ? " (" + x.rem + ")" : ""}`);
           const detail = `${j} · ${r} rit` + (parts.length ? " · " + parts.join(" · ") : (hasData ? "" : " · belum diisi"));
-          return `<div class="ccell"><div class="cbar ${hasData ? "" : "empty"} ${now ? "now" : ""}" data-act="open-ritase" data-id="${l.id}" data-tip="${esc(detail)}"><div class="cbar-fill" style="${grad}"></div></div><div class="cnum">${r || ""}</div></div>`;
+          return `<div class="ccell"><div class="cbar ${now ? "now" : ""}" data-act="open-ritase" data-id="${l.id}" data-tip="${esc(detail)}"><div class="cbar-fill" style="${grad}"></div></div><div class="cnum">${r || ""}</div></div>`;
         }).join("");
         return `<div class="mx-row" style="${tmpl}"><span class="ld" data-act="open-ritase" data-id="${l.id}">${esc(l.loader)}</span>${cells}</div>`;
       }).join("");
