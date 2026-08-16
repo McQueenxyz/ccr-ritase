@@ -378,7 +378,12 @@
       bcmR[h.loader_id] = (bcmR[h.loader_id] || 0) + sr * f;
     });
     const lossLJ = {};
-    losses.forEach((x) => { const lj = lossLJ[x.loader_id] = lossLJ[x.loader_id] || {}; const mp = lj[x.jam] = lj[x.jam] || { delay: 0, idle: 0 }; if (x.type === "idle") mp.idle += num(x.duration); else if (x.type === "delay") mp.delay += num(x.duration); });
+    losses.forEach((x) => {
+      const lj = lossLJ[x.loader_id] = lossLJ[x.loader_id] || {};
+      const mp = lj[x.jam] = lj[x.jam] || { delay: 0, idle: 0, items: [] };
+      if (x.type === "idle") mp.idle += num(x.duration); else if (x.type === "delay") mp.delay += num(x.duration);
+      mp.items.push({ type: x.type, cat: x.category, dur: num(x.duration), rem: x.remark });
+    });
     const tgtOf = (kode) => (CFG.TARGETS || {})[(CFG.UNIT_MODEL || {})[kode]] || null;
     const reached = (l) => { const t = tgtOf(l.loader); return !!(t && t.bcm && (bcmR[l.id] || 0) >= t.bcm); };
     const jams = jamListFor(state.shift);
@@ -397,12 +402,15 @@
         const mp = ritLJ[l.id] || {}, lj = lossLJ[l.id] || {};
         const P = (mnt) => (mnt / 60) * 100;
         const cells = jams.map((j) => {
-          const r = num(mp[j]), lo = lj[j] || { delay: 0, idle: 0 };
+          const r = num(mp[j]), lo = lj[j] || { delay: 0, idle: 0, items: [] };
           let d = lo.delay, i = lo.idle; const tot = d + i; if (tot > 60) { const s = 60 / tot; d *= s; i *= s; }
-          const work = r > 0 ? Math.max(0, 60 - d - i) : 0;
           const hasData = r > 0 || d > 0 || i > 0, now = j === nowJam;
-          const title = `${j} — ${r} rit${d ? ", delay " + Math.round(d) + "'" : ""}${i ? ", idle " + Math.round(i) + "'" : ""}`;
-          return `<div class="ccell"><div class="cbar ${hasData ? "" : "empty"} ${now ? "now" : ""}" data-act="open-ritase" data-id="${l.id}" title="${esc(title)}"><div class="cbar-fill"><div class="seg work" style="height:${P(work)}%"></div><div class="seg delay" style="height:${P(d)}%"></div><div class="seg idle" style="height:${P(i)}%"></div></div></div><div class="cnum">${r || ""}</div></div>`;
+          const loss = d + i, work = hasData ? Math.max(0, 60 - loss) : 0;
+          const wp = P(work), fp = P(work + loss);
+          const grad = hasData ? `background:linear-gradient(to top,#34c759 0 ${wp}%,#ffcc00 ${wp}% ${fp}%,transparent ${fp}% 100%);` : "";
+          const parts = (lo.items || []).map((x) => `${x.cat} ${Math.round(x.dur)}'${x.rem ? " (" + x.rem + ")" : ""}`);
+          const detail = `${j} · ${r} rit` + (parts.length ? " · " + parts.join(" · ") : (hasData ? "" : " · belum diisi"));
+          return `<div class="ccell"><div class="cbar ${hasData ? "" : "empty"} ${now ? "now" : ""}" data-act="open-ritase" data-id="${l.id}" data-tip="${esc(detail)}"><div class="cbar-fill" style="${grad}"></div></div><div class="cnum">${r || ""}</div></div>`;
         }).join("");
         return `<div class="mx-row" style="${tmpl}"><span class="ld" data-act="open-ritase" data-id="${l.id}">${esc(l.loader)}</span>${cells}</div>`;
       }).join("");
@@ -1067,6 +1075,22 @@
     document.body.appendChild(f);
   }
 
+  // Tooltip detail untuk bar Papan Shift (hover) — dipasang sekali, delegasi.
+  function initCbarTip() {
+    const tip = document.createElement("div"); tip.className = "cbar-tip"; tip.style.display = "none"; document.body.appendChild(tip);
+    const show = (b) => {
+      tip.textContent = b.getAttribute("data-tip") || ""; tip.style.display = "block";
+      const r = b.getBoundingClientRect();
+      tip.style.left = Math.max(8, Math.min(window.innerWidth - tip.offsetWidth - 8, r.left + r.width / 2 - tip.offsetWidth / 2)) + "px";
+      let top = r.top - tip.offsetHeight - 8; if (top < 8) top = r.bottom + 8;
+      tip.style.top = top + "px";
+    };
+    const hide = () => { tip.style.display = "none"; };
+    document.addEventListener("mouseover", (e) => { const b = e.target.closest && e.target.closest(".cbar[data-tip]"); if (b) show(b); });
+    document.addEventListener("mouseout", (e) => { if (e.target.closest && e.target.closest(".cbar[data-tip]")) hide(); });
+    document.addEventListener("click", (e) => { const b = e.target.closest && e.target.closest(".cbar[data-tip]"); if (b) { show(b); setTimeout(hide, 1800); } });
+  }
+
   async function boot() {
     initTheme();
     try { await Store.init(); } catch (e) {}
@@ -1074,6 +1098,7 @@
     window.addEventListener("hashchange", route);
     route();
     enhanceUI(document);
+    initCbarTip();
     new MutationObserver(() => { requestAnimationFrame(() => enhanceUI(document)); }).observe(document.body, { childList: true, subtree: true });
   }
   boot();
