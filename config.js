@@ -28,6 +28,11 @@ window.APP_CONFIG = {
   // Nama perusahaan untuk header laporan
   COMPANY: "PT Antareja Mahada Makmur",
 
+  // Model tiap loader (Exca) + target produksi per shift per model.
+  // Jika BCM shift loader >= target → target tercapai (loss tak wajib diisi).
+  UNIT_MODEL: { E5416: "PC400", E5418: "PC400", E5422: "PC400", E5314: "PC300", E5312: "PC300", E5168: "PC200", E5167: "PC200", E5189: "PC200", E5157: "PC200" },
+  TARGETS: { PC400: { bcm: 200, rit: 16 }, PC300: { bcm: 200, rit: 16 }, PC200: { bcm: 70, rit: 0 } },
+
   // Akun terdaftar (mode lokal): NRP -> { pw, nama }.
   // NRP tak terdaftar memakai password default "admin" (nama = NRP).
   // CATATAN KEAMANAN: file ini publik di GitHub — password di sini bisa dilihat siapa saja.

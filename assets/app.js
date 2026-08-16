@@ -81,8 +81,11 @@
 
   /* ---------- appbar & modal ---------- */
   function appbar(o = {}) {
+    const hh = location.hash || "#/";
+    const isHome = (hh === "#/" || hh === "" || hh === "#");
     return `<div class="appbar">
-      ${o.back ? `<button class="iconbtn" data-act="back" title="Kembali">${icon("back")}</button>` : `<button class="iconbtn" data-act="drawer" title="Menu">${icon("menu")}</button>`}
+      <button class="iconbtn" data-act="drawer" title="Menu">${icon("menu")}</button>
+      ${(o.back || !isHome) ? `<button class="iconbtn ab-back" data-act="back" title="Kembali">${icon("back")}</button>` : ""}
       <div class="logo"><span>CCR</span></div>
       ${o.crumb ? `<span class="crumb">${esc(o.crumb)}</span>` : ""}
       <span class="spacer"></span>
@@ -362,32 +365,44 @@
 
   /* ---------- LOADER LIST ---------- */
   async function renderLoaders() {
-    const { loaders, haulers } = await Store.listAll(state.tanggal, state.shift);
-    const cntH = {}, cntR = {}, ritLJ = {};
+    const { loaders, haulers, losses } = await Store.listAll(state.tanggal, state.shift);
+    const byId = {}; loaders.forEach((l) => (byId[l.id] = l));
+    const cntH = {}, cntR = {}, bcmR = {}, ritLJ = {};
     haulers.forEach((h) => {
       cntH[h.loader_id] = (cntH[h.loader_id] || 0) + 1;
+      const l = byId[h.loader_id] || {}, f = bcmPerRit(l.loader, h.material);
       const mp = ritLJ[h.loader_id] = ritLJ[h.loader_id] || {};
       Object.keys(h.rit || {}).forEach((j) => { mp[j] = (mp[j] || 0) + num(h.rit[j]); });
-      cntR[h.loader_id] = (cntR[h.loader_id] || 0) + Object.values(h.rit || {}).reduce((a, b) => a + num(b), 0);
+      const sr = Object.values(h.rit || {}).reduce((a, b) => a + num(b), 0);
+      cntR[h.loader_id] = (cntR[h.loader_id] || 0) + sr;
+      bcmR[h.loader_id] = (bcmR[h.loader_id] || 0) + sr * f;
     });
+    const lossLJ = {};
+    losses.forEach((x) => { const lj = lossLJ[x.loader_id] = lossLJ[x.loader_id] || {}; const mp = lj[x.jam] = lj[x.jam] || { delay: 0, idle: 0 }; if (x.type === "idle") mp.idle += num(x.duration); else if (x.type === "delay") mp.delay += num(x.duration); });
+    const tgtOf = (kode) => (CFG.TARGETS || {})[(CFG.UNIT_MODEL || {})[kode]] || null;
+    const reached = (l) => { const t = tgtOf(l.loader); return !!(t && t.bcm && (bcmR[l.id] || 0) >= t.bcm); };
     const jams = jamListFor(state.shift);
-    const restJams = String(state.shift) === "2" ? ["00.00", "06.00"] : ["12.00", "18.00"];
     const njRaw = String(new Date().getHours()).padStart(2, "0") + ".00";
     const nowJam = (state.tanggal === todayISO() && jams.includes(njRaw)) ? njRaw : null;
     const totalRit = Object.values(cntR).reduce((a, b) => a + b, 0);
-    const belum = nowJam ? loaders.filter((l) => !(num((ritLJ[l.id] || {})[nowJam]) > 0)).length : null;
+    // "belum" = jam-ini kosong DAN target produksi belum tercapai
+    const belum = nowJam ? loaders.filter((l) => !(num((ritLJ[l.id] || {})[nowJam]) > 0) && !reached(l)).length : null;
     const shiftOpts = state.master.shifts.map((s) => `<option value="${s.kode}" ${s.kode === state.shift ? "selected" : ""}>${esc(s.label)}</option>`).join("");
     // ---- Papan Shift: ringkasan + matriks Loader × Jam ----
     let papan = "";
     if (loaders.length) {
-      const tmpl = `grid-template-columns:66px repeat(${jams.length},minmax(26px,1fr));`;
+      const tmpl = `grid-template-columns:60px repeat(${jams.length},minmax(30px,1fr));`;
       const mhead = `<div class="mx-head" style="${tmpl}"><span class="ld">Loader</span>${jams.map((j) => `<span>${j.slice(0, 2)}</span>`).join("")}</div>`;
       const mrows = loaders.map((l) => {
-        const mp = ritLJ[l.id] || {};
+        const mp = ritLJ[l.id] || {}, lj = lossLJ[l.id] || {};
+        const P = (mnt) => (mnt / 60) * 100;
         const cells = jams.map((j) => {
-          const r = num(mp[j]); let cls = "empty", txt = "";
-          if (r > 0) { cls = "done"; txt = r; } else if (j === nowJam) { cls = "now"; txt = "·"; } else if (restJams.includes(j)) { cls = "rest"; txt = "R"; }
-          return `<span class="cell ${cls}" data-act="open-ritase" data-id="${l.id}">${txt}</span>`;
+          const r = num(mp[j]), lo = lj[j] || { delay: 0, idle: 0 };
+          let d = lo.delay, i = lo.idle; const tot = d + i; if (tot > 60) { const s = 60 / tot; d *= s; i *= s; }
+          const work = r > 0 ? Math.max(0, 60 - d - i) : 0;
+          const hasData = r > 0 || d > 0 || i > 0, now = j === nowJam;
+          const title = `${j} — ${r} rit${d ? ", delay " + Math.round(d) + "'" : ""}${i ? ", idle " + Math.round(i) + "'" : ""}`;
+          return `<div class="ccell"><div class="cbar ${hasData ? "" : "empty"} ${now ? "now" : ""}" data-act="open-ritase" data-id="${l.id}" title="${esc(title)}"><div class="cbar-fill"><div class="seg work" style="height:${P(work)}%"></div><div class="seg delay" style="height:${P(d)}%"></div><div class="seg idle" style="height:${P(i)}%"></div></div></div><div class="cnum">${r || ""}</div></div>`;
         }).join("");
         return `<div class="mx-row" style="${tmpl}"><span class="ld" data-act="open-ritase" data-id="${l.id}">${esc(l.loader)}</span>${cells}</div>`;
       }).join("");
@@ -404,7 +419,7 @@
         <div class="papan">
           <div class="ph"><span class="pt">Papan Shift ${esc(state.shift)}</span>${nowJam ? `<span class="live"><span class="bl"></span> ${nowJam}</span>` : ""}</div>
           <div class="mx-scroll">${mhead}${mrows}</div>
-          <div class="legend"><span><i style="background:var(--success-soft)"></i>Terisi</span><span><i style="border:2px solid var(--warning);background:var(--warning-soft)"></i>Jam ini</span><span><i style="border:1px dashed var(--border)"></i>Belum</span><span><i style="background:var(--surface-2)"></i>Rest</span></div>
+          <div class="legend"><span><i style="background:var(--success)"></i>Terisi</span><span><i style="background:var(--warning)"></i>Delay</span><span><i style="background:#8b5cf6"></i>Idle</span><span><i style="border:1px dashed var(--border-2)"></i>Belum</span><span><i style="box-shadow:0 0 0 2px var(--warning) inset"></i>Jam ini</span></div>
           ${nowJam ? `<div style="margin-top:12px"><button class="btn primary" data-act="report-now" data-jam="${nowJam}">Buat Laporan ${nowJam} →</button></div>` : ""}
         </div>`;
     }
@@ -414,7 +429,9 @@
           <div class="title">${esc(l.loader)}</div>
           <div class="meta"><span>Area: ${esc(l.area || "-")}</span><span>PIT: ${esc(l.pit || "-")}</span>
             <span>GL: ${esc(l.gl_pit || "-")}/${esc(l.gl_road || "-")}/${esc(l.gl_disposal || "-")}</span>
-            <span class="chip">${cntH[l.id] || 0} hauler</span><span class="chip ok">${cntR[l.id] || 0} rit</span></div>
+            <span class="chip">${cntH[l.id] || 0} hauler</span>
+            <span class="chip ${reached(l) ? "ok" : ""}">${cntR[l.id] || 0}${(tgtOf(l.loader) && tgtOf(l.loader).rit) ? "/" + tgtOf(l.loader).rit : ""} rit${reached(l) ? " ✓" : ""}</span>
+            <span class="chip">${Math.round(bcmR[l.id] || 0)}${tgtOf(l.loader) ? "/" + tgtOf(l.loader).bcm : ""} BCM</span></div>
         </div>
         <div class="actions">
           <button class="btn sm primary" data-act="open-loader" data-id="${l.id}">Buka →</button>
