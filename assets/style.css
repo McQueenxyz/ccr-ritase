@@ -205,15 +205,17 @@ tbody tr:hover td.empty{background:transparent;}
 .mx-row .ld{font-weight:600; font-size:13px; white-space:nowrap; padding-right:4px; color:var(--muted);}
 /* Papan Shift: sel = BAR waktu 60' seragam (worked/delay/idle) */
 .ccell{display:flex; flex-direction:column; align-items:center; gap:3px; min-width:0;}
-.cbar{position:relative; width:100%; max-width:34px; height:44px; border-radius:7px; overflow:hidden; cursor:pointer; background:var(--surface-2); border:1px solid var(--border); transition:box-shadow .14s var(--ease);}
-.cbar.empty{background:transparent; border:1px dashed var(--border-2);}
+.cbar{position:relative; width:100%; max-width:32px; height:44px; border-radius:7px; overflow:hidden; cursor:pointer; background:var(--surface-2); border:1px solid var(--border); transition:box-shadow .14s var(--ease);}
 .cbar.now{box-shadow:0 0 0 2px var(--warning) inset;}
 .cbar:hover{box-shadow:0 0 0 2px var(--primary) inset;}
 .cbar-fill{position:absolute; inset:0; display:flex; flex-direction:column-reverse;}
 .cbar .seg{width:100%; flex:none;}
-.cbar .seg.work{background:var(--success);}
-.cbar .seg.delay{background:var(--warning);}
-.cbar .seg.idle{background:#8b5cf6;}
+.cbar .seg.work{background:#34c759;}
+[data-theme="dark"] .cbar .seg.work{background:#30d158;}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .cbar .seg.work{background:#30d158;} }
+.cbar .seg.delay, .cbar .seg.idle{background:#ffcc00;}
+[data-theme="dark"] .cbar .seg.delay, [data-theme="dark"] .cbar .seg.idle{background:#ffd60a;}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .cbar .seg.delay, :root:not([data-theme="light"]) .cbar .seg.idle{background:#ffd60a;} }
 .cnum{font-size:11px; font-weight:600; color:var(--muted); font-variant-numeric:tabular-nums; height:14px; line-height:14px;}
 .ab-back{margin-left:-4px;}
 .legend{display:flex; flex-wrap:wrap; gap:10px 16px; margin-top:14px; font-size:12px; color:var(--muted);}

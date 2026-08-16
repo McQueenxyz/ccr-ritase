@@ -419,7 +419,7 @@
         <div class="papan">
           <div class="ph"><span class="pt">Papan Shift ${esc(state.shift)}</span>${nowJam ? `<span class="live"><span class="bl"></span> ${nowJam}</span>` : ""}</div>
           <div class="mx-scroll">${mhead}${mrows}</div>
-          <div class="legend"><span><i style="background:var(--success)"></i>Terisi</span><span><i style="background:var(--warning)"></i>Delay</span><span><i style="background:#8b5cf6"></i>Idle</span><span><i style="border:1px dashed var(--border-2)"></i>Belum</span><span><i style="box-shadow:0 0 0 2px var(--warning) inset"></i>Jam ini</span></div>
+          <div class="legend"><span><i style="background:#34c759"></i>Terisi</span><span><i style="background:#ffcc00"></i>Delay/Idle</span><span><i style="background:var(--surface-2);border:1px solid var(--border)"></i>Belum</span><span><i style="box-shadow:0 0 0 2px var(--warning) inset"></i>Jam ini</span></div>
           ${nowJam ? `<div style="margin-top:12px"><button class="btn primary" data-act="report-now" data-jam="${nowJam}">Buat Laporan ${nowJam} →</button></div>` : ""}
         </div>`;
     }
