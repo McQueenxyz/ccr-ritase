@@ -208,6 +208,7 @@ tbody tr:hover td.empty{background:transparent;}
 .papan-head .pt{font-weight:600; font-size:17px; letter-spacing:-.01em;}
 .fleet-card{margin-bottom:14px;}
 .fleet-top{display:flex; align-items:flex-start; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:14px;}
+.fleet-rows{display:grid; gap:10px;}
 .fleet-grid{display:grid; gap:5px; align-items:end;}
 .jlbl{font-size:10px; color:var(--faint); text-align:center; font-variant-numeric:tabular-nums;}
 /* Papan Shift: sel = BAR waktu 60' seragam (worked/delay/idle) */

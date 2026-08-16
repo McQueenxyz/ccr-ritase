@@ -399,7 +399,7 @@
     const P = (mnt) => (mnt / 60) * 100;
     const barsFor = (l) => {
       const mp = ritLJ[l.id] || {}, lj = lossLJ[l.id] || {};
-      const cols = jams.map((j) => {
+      const cell = (j) => {
         const r = num(mp[j]), lo = lj[j] || { delay: 0, idle: 0, items: [] };
         let d = lo.delay, i = lo.idle; const tot = d + i; if (tot > 60) { const s = 60 / tot; d *= s; i *= s; }
         const hasData = r > 0 || d > 0 || i > 0, now = j === nowJam;
@@ -409,8 +409,10 @@
         const parts = (lo.items || []).map((x) => `${x.cat} ${Math.round(x.dur)}'${x.rem ? " (" + x.rem + ")" : ""}`);
         const detail = `${j} · ${r} rit` + (parts.length ? " · " + parts.join(" · ") : (hasData ? "" : " · belum diisi"));
         return `<div class="ccell"><div class="jlbl">${j.slice(0, 2)}</div><div class="cbar ${now ? "now" : ""}" data-act="open-ritase" data-id="${l.id}" data-tip="${esc(detail)}"><div class="cbar-fill" style="${grad}"></div></div><div class="cnum">${r || ""}</div></div>`;
-      }).join("");
-      return `<div class="mx-scroll"><div class="fleet-grid" style="grid-template-columns:repeat(${jams.length},minmax(30px,1fr))">${cols}</div></div>`;
+      };
+      const half = Math.ceil(jams.length / 2);
+      const grid = (arr) => `<div class="fleet-grid" style="grid-template-columns:repeat(${arr.length},minmax(30px,1fr))">${arr.map(cell).join("")}</div>`;
+      return `<div class="fleet-rows">${grid(jams.slice(0, half))}${grid(jams.slice(half))}</div>`;
     };
     if (loaders.length) {
       papan = `${nowJam && belum > 0 ? `<div class="banner">
