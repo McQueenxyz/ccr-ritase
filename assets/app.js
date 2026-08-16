@@ -396,25 +396,23 @@
     const shiftOpts = state.master.shifts.map((s) => `<option value="${s.kode}" ${s.kode === state.shift ? "selected" : ""}>${esc(s.label)}</option>`).join("");
     // ---- Papan Shift: ringkasan + matriks Loader × Jam ----
     let papan = "";
-    if (loaders.length) {
-      const tmpl = `grid-template-columns:60px repeat(${jams.length},minmax(30px,1fr));`;
-      const mhead = `<div class="mx-head" style="${tmpl}"><span class="ld">Loader</span>${jams.map((j) => `<span>${j.slice(0, 2)}</span>`).join("")}</div>`;
-      const mrows = loaders.map((l) => {
-        const mp = ritLJ[l.id] || {}, lj = lossLJ[l.id] || {};
-        const P = (mnt) => (mnt / 60) * 100;
-        const cells = jams.map((j) => {
-          const r = num(mp[j]), lo = lj[j] || { delay: 0, idle: 0, items: [] };
-          let d = lo.delay, i = lo.idle; const tot = d + i; if (tot > 60) { const s = 60 / tot; d *= s; i *= s; }
-          const hasData = r > 0 || d > 0 || i > 0, now = j === nowJam;
-          const loss = d + i, work = hasData ? Math.max(0, 60 - loss) : 0;
-          const wp = P(work), fp = P(work + loss);
-          const grad = hasData ? `background:linear-gradient(to top,#34c759 0 ${wp}%,#ffcc00 ${wp}% ${fp}%,transparent ${fp}% 100%);` : "";
-          const parts = (lo.items || []).map((x) => `${x.cat} ${Math.round(x.dur)}'${x.rem ? " (" + x.rem + ")" : ""}`);
-          const detail = `${j} · ${r} rit` + (parts.length ? " · " + parts.join(" · ") : (hasData ? "" : " · belum diisi"));
-          return `<div class="ccell"><div class="cbar ${now ? "now" : ""}" data-act="open-ritase" data-id="${l.id}" data-tip="${esc(detail)}"><div class="cbar-fill" style="${grad}"></div></div><div class="cnum">${r || ""}</div></div>`;
-        }).join("");
-        return `<div class="mx-row" style="${tmpl}"><span class="ld" data-act="open-ritase" data-id="${l.id}">${esc(l.loader)}</span>${cells}</div>`;
+    const P = (mnt) => (mnt / 60) * 100;
+    const barsFor = (l) => {
+      const mp = ritLJ[l.id] || {}, lj = lossLJ[l.id] || {};
+      const cols = jams.map((j) => {
+        const r = num(mp[j]), lo = lj[j] || { delay: 0, idle: 0, items: [] };
+        let d = lo.delay, i = lo.idle; const tot = d + i; if (tot > 60) { const s = 60 / tot; d *= s; i *= s; }
+        const hasData = r > 0 || d > 0 || i > 0, now = j === nowJam;
+        const loss = d + i, work = hasData ? Math.max(0, 60 - loss) : 0;
+        const wp = P(work), fp = P(work + loss);
+        const grad = hasData ? `background:linear-gradient(to top,#34c759 0 ${wp}%,#ffcc00 ${wp}% ${fp}%,transparent ${fp}% 100%);` : "";
+        const parts = (lo.items || []).map((x) => `${x.cat} ${Math.round(x.dur)}'${x.rem ? " (" + x.rem + ")" : ""}`);
+        const detail = `${j} · ${r} rit` + (parts.length ? " · " + parts.join(" · ") : (hasData ? "" : " · belum diisi"));
+        return `<div class="ccell"><div class="jlbl">${j.slice(0, 2)}</div><div class="cbar ${now ? "now" : ""}" data-act="open-ritase" data-id="${l.id}" data-tip="${esc(detail)}"><div class="cbar-fill" style="${grad}"></div></div><div class="cnum">${r || ""}</div></div>`;
       }).join("");
+      return `<div class="mx-scroll"><div class="fleet-grid" style="grid-template-columns:repeat(${jams.length},minmax(30px,1fr))">${cols}</div></div>`;
+    };
+    if (loaders.length) {
       papan = `${nowJam && belum > 0 ? `<div class="banner">
           <span class="bic">${icon("rocket", 22)}</span>
           <div class="btxt"><div class="t">Jam ${nowJam} — waktunya laporan per jam</div><div class="d">${belum} loader belum diisi untuk jam ini.</div></div>
@@ -425,29 +423,28 @@
           <div class="stat"><div class="n">${totalRit}</div><div class="t">Total rit shift</div></div>
           <div class="stat ${nowJam ? "hot" : ""}"><div class="n">${nowJam ? belum : haulers.length}</div><div class="t">${nowJam ? "Belum jam " + nowJam : "Total hauler"}</div></div>
         </div>
-        <div class="papan">
-          <div class="ph"><span class="pt">Papan Shift ${esc(state.shift)}</span>${nowJam ? `<span class="live"><span class="bl"></span> ${nowJam}</span>` : ""}</div>
-          <div class="mx-scroll">${mhead}${mrows}</div>
-          <div class="legend"><span><i style="background:#34c759"></i>Terisi</span><span><i style="background:#ffcc00"></i>Delay/Idle</span><span><i style="background:var(--surface-2);border:1px solid var(--border)"></i>Belum</span><span><i style="box-shadow:0 0 0 2px var(--warning) inset"></i>Jam ini</span></div>
-          ${nowJam ? `<div style="margin-top:12px"><button class="btn primary" data-act="report-now" data-jam="${nowJam}">Buat Laporan ${nowJam} →</button></div>` : ""}
-        </div>`;
+        <div class="papan-head"><span class="pt">Papan Shift ${esc(state.shift)}</span>${nowJam ? `<span class="live"><span class="bl"></span> ${nowJam}</span>` : ""}</div>
+        <div class="legend"><span><i style="background:#34c759"></i>Terisi</span><span><i style="background:#ffcc00"></i>Delay/Idle</span><span><i style="background:var(--surface-2);border:1px solid var(--border)"></i>Belum</span><span><i style="box-shadow:0 0 0 2px var(--warning) inset"></i>Jam ini</span></div>
+        ${nowJam ? `<div style="margin:10px 0 4px"><button class="btn primary" data-act="report-now" data-jam="${nowJam}">Buat Laporan ${nowJam} →</button></div>` : ""}`;
     }
     const rows = loaders.length ? loaders.map((l) => `
-      <div class="list-row form-row">
-        <div>
-          <div class="title">${esc(l.loader)}</div>
-          <div class="meta"><span>Area: ${esc(l.area || "-")}</span><span>PIT: ${esc(l.pit || "-")}</span>
-            <span>GL: ${esc(l.gl_pit || "-")}/${esc(l.gl_road || "-")}/${esc(l.gl_disposal || "-")}</span>
-            <span class="chip">${cntH[l.id] || 0} hauler</span>
-            <span class="chip ${reached(l) ? "ok" : ""}">${cntR[l.id] || 0}${(tgtOf(l.loader) && tgtOf(l.loader).rit) ? "/" + tgtOf(l.loader).rit : ""} rit${reached(l) ? " ✓" : ""}</span>
-            <span class="chip">${Math.round(bcmR[l.id] || 0)}${tgtOf(l.loader) ? "/" + tgtOf(l.loader).bcm : ""} BCM</span></div>
+      <div class="card fleet-card">
+        <div class="fleet-top">
+          <div>
+            <div class="title">${esc(l.loader)}</div>
+            <div class="meta"><span>PIT ${esc(l.pit || "-")}</span><span>GL: ${esc(l.gl_pit || "-")}</span>
+              <span class="chip">${cntH[l.id] || 0} hauler</span>
+              <span class="chip ${reached(l) ? "ok" : ""}">${cntR[l.id] || 0}${(tgtOf(l.loader) && tgtOf(l.loader).rit) ? "/" + tgtOf(l.loader).rit : ""} rit${reached(l) ? " ✓" : ""}</span>
+              <span class="chip">${Math.round(bcmR[l.id] || 0)}${tgtOf(l.loader) ? "/" + tgtOf(l.loader).bcm : ""} BCM</span></div>
+          </div>
+          <div class="actions">
+            <button class="btn sm primary" data-act="open-loader" data-id="${l.id}">Buka →</button>
+            <button class="iconbtn" data-act="dup-loader" data-id="${l.id}" title="Duplikat (loader baru, pengawas sama)">${icon("copy")}</button>
+            <button class="iconbtn" data-act="edit-loader" data-id="${l.id}" title="Edit">${icon("edit")}</button>
+            <button class="iconbtn" data-act="del-loader" data-id="${l.id}" title="Hapus">${icon("delete")}</button>
+          </div>
         </div>
-        <div class="actions">
-          <button class="btn sm primary" data-act="open-loader" data-id="${l.id}">Buka →</button>
-          <button class="iconbtn" data-act="dup-loader" data-id="${l.id}" title="Duplikat (loader baru, pengawas sama)">${icon("copy")}</button>
-          <button class="iconbtn" data-act="edit-loader" data-id="${l.id}" title="Edit">${icon("edit")}</button>
-          <button class="iconbtn" data-act="del-loader" data-id="${l.id}" title="Hapus">${icon("delete")}</button>
-        </div>
+        ${barsFor(l)}
       </div>`).join("") : `<div class="empty">Belum ada loader untuk tanggal & shift ini.<br/>Klik <b>＋ Tambah Loader</b>.</div>`;
     app.innerHTML = `${appbar({ back: true, menu: true, crumb: "Form Ritase" })}<div class="container">
       <div class="toolbar">
