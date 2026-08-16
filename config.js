@@ -28,10 +28,10 @@ window.APP_CONFIG = {
   // Nama perusahaan untuk header laporan
   COMPANY: "PT Antareja Mahada Makmur",
 
-  // Akun terdaftar (mode lokal): NRP -> password.
-  // NRP yang tidak terdaftar di sini memakai password default "admin".
+  // Akun terdaftar (mode lokal): NRP -> { pw, nama }.
+  // NRP tak terdaftar memakai password default "admin" (nama = NRP).
   // CATATAN KEAMANAN: file ini publik di GitHub — password di sini bisa dilihat siapa saja.
   ACCOUNTS: {
-    "13250057": "Dev",
+    "13250057": { pw: "Dev", nama: "Muh Taufik Hidayat" },
   },
 };

@@ -38,9 +38,11 @@
     async signIn(nrp, password) {
       if (!nrp) throw new Error("NRP wajib diisi");
       const accts = (CFG && CFG.ACCOUNTS) || {};
-      const expected = Object.prototype.hasOwnProperty.call(accts, String(nrp)) ? accts[String(nrp)] : "admin";
+      const acc = accts[String(nrp)];
+      const expected = acc ? (typeof acc === "string" ? acc : acc.pw) : "admin";
       if (password !== expected) throw new Error("Password salah");
-      const db = this._load(); db.session = { nrp, nama: nrp, at: Date.now() }; this._save(db); return db.session;
+      const nama = acc && typeof acc === "object" && acc.nama ? acc.nama : nrp;
+      const db = this._load(); db.session = { nrp, nama, at: Date.now() }; this._save(db); return db.session;
     },
     async signOut() { const db = this._load(); db.session = null; this._save(db); },
     async currentUser() { return this._load().session; },

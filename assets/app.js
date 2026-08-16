@@ -60,6 +60,10 @@
     save: '<path d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>',
     rocket: '<path d="M15.59 14.37a6 6 0 0 1-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 0 0 6.16-12.12A14.98 14.98 0 0 0 9.63 8.41m5.96 5.96a14.9 14.9 0 0 1-5.84 2.58m-.12-8.54a6 6 0 0 0-7.38 5.84h4.8m2.58-5.84a14.93 14.93 0 0 0-2.58 5.84m2.7 2.7c-.1.02-.21.04-.31.06a15.1 15.1 0 0 1-2.45-2.45 14.9 14.9 0 0 1 .06-.31m-2.24 2.39a4.49 4.49 0 0 0-1.76 4.3 4.49 4.49 0 0 0 4.31-1.75M16.5 9a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z"/>',
     mail: '<path d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"/>',
+    grid: '<path d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z"/>',
+    clock: '<path d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>',
+    box: '<path d="m21 7.5-9-5.25L3 7.5m18 0-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9"/>',
+    alert: '<path d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"/>',
     whatsapp: '<path d="M.057 24l1.687-6.163a11.867 11.867 0 0 1-1.587-5.945C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 0 1 8.413 3.488 11.824 11.824 0 0 1 3.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 0 1-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.767.967-.94 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.095 3.2 5.076 4.487.71.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>',
     instagram: '<path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24s3.668-.014 4.948-.072c4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/>',
     x: '<path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>',
@@ -78,13 +82,11 @@
   /* ---------- appbar & modal ---------- */
   function appbar(o = {}) {
     return `<div class="appbar">
-      ${o.back ? `<button class="iconbtn" data-act="back" title="Kembali">${icon("back")}</button>` : ""}
+      ${o.back ? `<button class="iconbtn" data-act="back" title="Kembali">${icon("back")}</button>` : `<button class="iconbtn" data-act="drawer" title="Menu">${icon("menu")}</button>`}
       <div class="logo"><span>CCR</span></div>
       ${o.crumb ? `<span class="crumb">${esc(o.crumb)}</span>` : ""}
       <span class="spacer"></span>
       <span class="mode-badge ${Store.mode}">${Store.mode === "supabase" ? "ONLINE" : "LOKAL"}</span>
-      ${o.menu ? `<button class="iconbtn" data-act="go-menu" title="Menu">${icon("menu")}</button>` : ""}
-      ${o.logout ? `<button class="iconbtn" data-act="logout" title="Keluar">${icon("logout")}</button>` : ""}
     </div>`;
   }
   function openModal(title, bodyHtml) {
@@ -114,12 +116,15 @@
     if (!state.user) return renderLogin();
     if (!state.master) state.master = await Store.getMaster();
     const h = location.hash || "#/";
+    closeDrawer();
     if (h.startsWith("#/loader/")) return renderLoaderDetail(h.split("/").pop());
     if (h.startsWith("#/report")) return renderReport();
+    if (h.startsWith("#/unit")) return renderUnit({ add: h.indexOf("/add") >= 0 });
+    if (h.startsWith("#/delay")) return renderDelay({ add: h.indexOf("/add") >= 0 });
     if (h.startsWith("#/setting")) return renderSetting();
     if (h.startsWith("#/account")) return renderAccount();
     if (h.startsWith("#/form")) return renderLoaders();
-    return renderMenu();
+    return renderDashboard();
   }
 
   /* ---------- LOGIN ---------- */
@@ -130,9 +135,12 @@
       <h1 class="login-title">Masuk dengan<br>Akun CCR</h1>
       <div id="acct-badge" class="acct-badge hidden"></div>
       <form id="login-form" autocomplete="off" novalidate>
-        <div class="login-field">
-          <input id="lg-input" class="login-input" placeholder="Masukkan Nrp" inputmode="numeric" autocomplete="off" />
+        <div class="login-field" id="fld-nrp">
+          <input id="lg-nrp" class="login-input" placeholder="Masukkan Nrp" inputmode="numeric" autocomplete="off" />
           <button type="submit" id="lg-arrow" class="login-arrow" aria-label="Lanjut">${icon("next", 16)}</button>
+        </div>
+        <div class="login-field hidden" id="fld-pw">
+          <input id="lg-pw" class="login-input" type="password" placeholder="Password" autocomplete="off" />
         </div>
         <div id="lg-err" class="login-err hidden">Periksa informasi akun yang Anda masukkan dan coba lagi.</div>
         <div id="lg-back" class="login-back hidden"><a data-act="lg-reset">‹ Ganti NRP</a></div>
@@ -143,30 +151,31 @@
     </div></div>`;
     let nrp = "", step = "nrp";
     const $ = (id) => document.getElementById(id);
-    const input = $("lg-input"), arrow = $("lg-arrow"), loginBtn = $("lg-login"), badge = $("acct-badge"), back = $("lg-back"), err = $("lg-err");
+    const nrpFld = $("fld-nrp"), pwFld = $("fld-pw"), nrpIn = $("lg-nrp"), pwIn = $("lg-pw"), loginBtn = $("lg-login"), badge = $("acct-badge"), back = $("lg-back"), err = $("lg-err");
     const showErr = (on) => err.classList.toggle("hidden", !on);
     function toPw() {
-      nrp = input.value.trim(); if (!nrp) { input.focus(); return; }
-      step = "pw"; showErr(false);
+      nrp = nrpIn.value.trim(); if (!nrp) { nrpIn.focus(); return; }
+      step = "pw"; showErr(false); pwIn.value = "";
       badge.textContent = "NRP " + nrp; badge.classList.remove("hidden"); back.classList.remove("hidden");
-      input.type = "password"; input.value = ""; input.placeholder = "Password"; input.setAttribute("inputmode", "text");
-      arrow.classList.add("hidden"); loginBtn.classList.remove("hidden"); input.focus();
+      nrpFld.classList.add("hidden"); pwFld.classList.remove("hidden"); loginBtn.classList.remove("hidden");
+      setTimeout(() => pwIn.focus(), 40);
     }
     function toNrp() {
-      step = "nrp"; nrp = ""; showErr(false);
+      step = "nrp"; nrp = ""; showErr(false); pwIn.value = "";
       badge.classList.add("hidden"); back.classList.add("hidden");
-      input.type = "text"; input.value = ""; input.placeholder = "Masukkan Nrp"; input.setAttribute("inputmode", "numeric");
-      arrow.classList.remove("hidden"); loginBtn.classList.add("hidden"); input.focus();
+      pwFld.classList.add("hidden"); loginBtn.classList.add("hidden"); nrpFld.classList.remove("hidden");
+      setTimeout(() => nrpIn.focus(), 40);
     }
     async function doLogin() {
       showErr(false);
-      try { state.user = await Store.signIn(nrp, input.value); location.hash = "#/"; route(); }
-      catch (e) { showErr(true); input.focus(); if (input.select) input.select(); }
+      try { state.user = await Store.signIn(nrp, pwIn.value); location.hash = "#/"; route(); }
+      catch (e) { showErr(true); pwIn.focus(); if (pwIn.select) pwIn.select(); }
     }
-    input.addEventListener("input", () => showErr(false));
+    nrpIn.addEventListener("input", () => showErr(false));
+    pwIn.addEventListener("input", () => showErr(false));
     $("login-form").addEventListener("submit", (e) => { e.preventDefault(); if (step === "nrp") toPw(); else doLogin(); });
     back.querySelector("[data-act='lg-reset']").addEventListener("click", (e) => { e.preventDefault(); toNrp(); });
-    setTimeout(() => input.focus(), 30);
+    setTimeout(() => nrpIn.focus(), 30);
   }
 
   /* Animator border-beam: sudut diputar dengan kecepatan yang di-spring saat hover.
@@ -196,16 +205,159 @@
     raf = requestAnimationFrame(frame);
   }
 
-  /* ---------- MENU ---------- */
-  function renderMenu() {
-    app.innerHTML = `${appbar({ logout: true })}<div class="container">
-      <div class="page-title">Halo, ${esc(state.user.nama)} 👋</div>
-      <div class="menu-list card">
-        <div class="menu-item" data-act="nav" data-to="#/form"><span class="ico">${icon("form", 22)}</span> FORM RITASE</div>
-        <div class="menu-item" data-act="nav" data-to="#/report"><span class="ico">${icon("chat", 22)}</span> LAPORAN WHATSAPP</div>
-        <div class="menu-item" data-act="nav" data-to="#/setting"><span class="ico">${icon("settings", 22)}</span> SETTING (DATA MASTER)</div>
-        <div class="menu-item" data-act="nav" data-to="#/account"><span class="ico">${icon("person", 22)}</span> ACCOUNT</div>
-      </div></div>`;
+  const fmtNum = (n) => (Number(n) || 0).toLocaleString("id-ID");
+
+  /* ---------- NAVBAR (drawer) ---------- */
+  function drawerItems() {
+    const h = location.hash || "#/";
+    const isHome = (h === "#/" || h === "" || h === "#");
+    const it = (to, ic, label, act) => `<div class="nav-item ${(act ? false : (to === "#/" ? isHome : h.startsWith(to))) ? "active" : ""}" data-to="${to || ""}">${icon(ic, 20)}<span>${label}</span></div>`;
+    return `
+      ${it("#/", "grid", "Dashboard")}
+      ${it("#/form", "truck", "Form Ritase")}
+      ${it("#/report", "chat", "Report")}
+      <div class="nav-grp"><div class="nav-gh">${icon("box", 18)}<span>Unit</span></div>
+        <div class="nav-sub" data-to="#/unit">Daftar Populasi Unit</div>
+        <div class="nav-sub" data-to="#/unit/add">Tambah Unit</div></div>
+      <div class="nav-grp"><div class="nav-gh">${icon("alert", 18)}<span>Delay</span></div>
+        <div class="nav-sub" data-to="#/delay">Daftar Delay</div>
+        <div class="nav-sub" data-to="#/delay/add">Tambah Delay</div></div>
+      ${it("#/account", "person", "Account")}
+      ${it("#/setting", "settings", "Setting")}
+      <div class="nav-sep"></div>
+      <div class="nav-item danger" data-act="logout">${icon("logout", 20)}<span>Logout</span></div>`;
+  }
+  function openDrawer() {
+    let d = document.getElementById("drawer");
+    if (!d) { d = document.createElement("div"); d.id = "drawer"; d.className = "drawer-bg"; document.body.appendChild(d); }
+    d.innerHTML = `<nav class="drawer"><div class="drawer-head"><div class="logo"><span>CCR</span></div><button class="iconbtn" data-act="drawer-close" aria-label="Tutup">${icon("close")}</button></div><div class="drawer-body">${drawerItems()}</div></nav>`;
+    requestAnimationFrame(() => d.classList.add("open"));
+    d.onclick = (e) => {
+      if (e.target === d || e.target.closest('[data-act="drawer-close"]')) return closeDrawer();
+      const lo = e.target.closest('[data-act="logout"]');
+      if (lo) { closeDrawer(); confirmModal("Keluar dari akun CCR?", async () => { await Store.signOut(); state.user = null; state.master = null; renderLogin(); }, "Ya, keluar"); return; }
+      const nav = e.target.closest("[data-to]");
+      if (nav && nav.getAttribute("data-to")) { const to = nav.getAttribute("data-to"); closeDrawer(); if ((location.hash || "#/") === to) route(); else location.hash = to; }
+    };
+  }
+  function closeDrawer() { const d = document.getElementById("drawer"); if (d) d.classList.remove("open"); }
+
+  /* ---------- DASHBOARD ---------- */
+  async function renderDashboard() {
+    const { loaders, haulers } = await Store.listAll(state.tanggal, state.shift);
+    const byId = {}; loaders.forEach((l) => (byId[l.id] = l));
+    const jams = jamListFor(state.shift);
+    const perJam = {}; jams.forEach((j) => (perJam[j] = 0));
+    let totalRit = 0, totalBcm = 0;
+    haulers.forEach((h) => {
+      const l = byId[h.loader_id] || {}; const f = bcmPerRit(l.loader, h.material);
+      Object.keys(h.rit || {}).forEach((j) => { const r = num(h.rit[j]); totalRit += r; totalBcm += r * f; if (perJam[j] != null) perJam[j] += r; });
+    });
+    const hoursReported = jams.filter((j) => perJam[j] > 0).length;
+    const maxJam = Math.max(1, ...jams.map((j) => perJam[j]));
+    const shiftOpts = state.master.shifts.map((s) => `<option value="${s.kode}" ${s.kode === state.shift ? "selected" : ""}>${esc(s.label)}</option>`).join("");
+    const bars = jams.map((j) => {
+      const v = perJam[j], pct = v > 0 ? Math.max(8, Math.round((v / maxJam) * 100)) : 0;
+      return `<div class="bcol"><div class="bval">${v || ""}</div><div class="btrack"><div class="bfill" style="height:${pct}%"></div></div><div class="blbl">${j.slice(0, 2)}</div></div>`;
+    }).join("");
+    app.innerHTML = `${appbar({ menu: true, crumb: "Dashboard" })}<div class="container">
+      <div class="dash-hi">Halo, <b>${esc(state.user.nama)}</b> 👋</div>
+      <div class="toolbar">
+        <div><label>Tanggal</label><input type="date" id="d-tgl" value="${state.tanggal}"></div>
+        <div class="grow"><label>Shift</label><select id="d-shift">${shiftOpts}</select></div>
+      </div>
+      <div class="dstats">
+        <div class="dcard"><span class="dic blue">${icon("truck", 20)}</span><div><div class="n">${fmtNum(totalRit)}</div><div class="t">Total Ritase</div></div></div>
+        <div class="dcard"><span class="dic green">${icon("box", 20)}</span><div><div class="n">${fmtNum(Math.round(totalBcm))}</div><div class="t">Total BCM</div></div></div>
+        <div class="dcard"><span class="dic amber">${icon("clock", 20)}</span><div><div class="n">${hoursReported}<span class="ns">/${jams.length}</span></div><div class="t">Jam Terlapor</div></div></div>
+      </div>
+      <div class="card">
+        <div class="dchart-h"><span class="pt">Ritase per Jam</span><span class="chip">Shift ${state.shift}</span></div>
+        <div class="bars">${bars || '<div class="empty">Belum ada input.</div>'}</div>
+      </div>
+    </div>`;
+    document.getElementById("d-tgl").onchange = (e) => { state.tanggal = e.target.value; renderDashboard(); };
+    document.getElementById("d-shift").onchange = (e) => { state.shift = e.target.value; renderDashboard(); };
+  }
+
+  /* ---------- UNIT (populasi) ---------- */
+  async function renderUnit(opts) {
+    const m = state.master;
+    const dts = m.haulers_master || [], excas = m.loaders || [];
+    const dtRows = dts.length ? dts.map((u, i) => `<tr><td class="num">${i + 1}</td><td>${esc(u.lambung)}</td><td>${esc(u.ton)} T</td>
+      <td class="actions"><button class="iconbtn" data-act="del-unit" data-kind="dt" data-id="${esc(u.lambung)}" title="Hapus">${icon("delete")}</button></td></tr>`).join("") : `<tr><td colspan="4" class="empty">Belum ada DT.</td></tr>`;
+    const exRows = excas.length ? excas.map((l, i) => `<tr><td class="num">${i + 1}</td><td>${esc(l.kode)}</td><td>${esc(l.material_default || "-")}</td>
+      <td class="actions"><button class="iconbtn" data-act="del-unit" data-kind="exca" data-id="${esc(l.kode)}" title="Hapus">${icon("delete")}</button></td></tr>`).join("") : `<tr><td colspan="4" class="empty">Belum ada Loader.</td></tr>`;
+    app.innerHTML = `${appbar({ menu: true, crumb: "Unit" })}<div class="container">
+      <div class="page-head"><div class="page-title">Populasi Unit</div><button class="btn primary" data-act="add-unit">${icon("add", 18)} Tambah Unit</button></div>
+      <div class="card sect"><div class="sect-h"><span>Dump Truck (DT)</span><span class="chip">${dts.length}</span></div>
+        <div class="table-wrap"><table><thead><tr><th class="num">No</th><th>Nomor Lambung</th><th>Tonase</th><th>Aksi</th></tr></thead><tbody>${dtRows}</tbody></table></div></div>
+      <div class="card sect"><div class="sect-h"><span>Excavator (Loader)</span><span class="chip">${excas.length}</span></div>
+        <div class="table-wrap"><table><thead><tr><th class="num">No</th><th>Kode Unit</th><th>Material Default</th><th>Aksi</th></tr></thead><tbody>${exRows}</tbody></table></div></div>
+    </div>`;
+    if (opts && opts.add) unitModal();
+  }
+  function unitModal() {
+    const body = `
+      <div class="field"><label>Jenis Unit</label><select id="u-kind"><option value="dt">Dump Truck (DT)</option><option value="exca">Excavator (Loader)</option></select></div>
+      <div class="field"><label>Kode / Nomor Lambung</label><input id="u-kode" placeholder="cth: DA54227 atau E5416" /></div>
+      <div class="field" id="u-ton-wrap"><label>Tonase (DT)</label><select id="u-ton"><option value="20">20 Ton</option><option value="30" selected>30 Ton</option><option value="40">40 Ton</option></select></div>
+      <div class="modal-actions"><button class="btn primary block" data-act="save-unit">Simpan</button><button class="btn block" data-act="cancel">Batal</button></div>`;
+    const mo = openModal("Tambah Unit", body);
+    const kindSel = mo.root.querySelector("#u-kind"), tonWrap = mo.root.querySelector("#u-ton-wrap");
+    kindSel.onchange = () => { tonWrap.style.display = kindSel.value === "dt" ? "" : "none"; };
+    mo.root.querySelector('[data-act="cancel"]').onclick = mo.close;
+    mo.root.querySelector('[data-act="save-unit"]').onclick = async () => {
+      const kode = mo.root.querySelector("#u-kode").value.trim().toUpperCase();
+      if (!kode) { toast("Isi kode/lambung"); return; }
+      const m = state.master;
+      if (kindSel.value === "dt") {
+        m.haulers_master = m.haulers_master || [];
+        if (m.haulers_master.some((u) => u.lambung.toUpperCase() === kode)) { toast("Sudah ada"); return; }
+        m.haulers_master.push({ lambung: kode, ton: num(mo.root.querySelector("#u-ton").value) });
+      } else {
+        m.loaders = m.loaders || [];
+        if (m.loaders.some((l) => l.kode.toUpperCase() === kode)) { toast("Sudah ada"); return; }
+        m.loaders.push({ kode, material_default: "OB", keterangan: "" });
+      }
+      await Store.saveMaster(m); toast("Unit ditambahkan"); mo.close(); renderUnit();
+    };
+  }
+
+  /* ---------- DELAY (kode) ---------- */
+  async function renderDelay(opts) {
+    const codes = (window.SS6_CODES && window.SS6_CODES.DELAY) || {};
+    const extra = state.master.delay_extra || [];
+    const rows = Object.keys(codes).sort().map((c) => `<tr><td>${esc(c)}</td><td>${esc(codes[c])}</td><td></td></tr>`).join("");
+    const exRows = extra.length ? extra.map((d, i) => `<tr><td>${esc(d.code || "-")}</td><td>${esc(d.desc)}</td>
+      <td class="actions"><button class="iconbtn" data-act="del-delay" data-i="${i}" title="Hapus">${icon("delete")}</button></td></tr>`).join("") : `<tr><td colspan="3" class="empty">Belum ada delay tambahan.</td></tr>`;
+    app.innerHTML = `${appbar({ menu: true, crumb: "Delay" })}<div class="container">
+      <div class="page-head"><div class="page-title">Delay</div><button class="btn primary" data-act="add-delay">${icon("add", 18)} Tambah Delay</button></div>
+      <div class="card sect"><div class="sect-h"><span>Delay Tambahan</span><span class="chip">${extra.length}</span></div>
+        <div class="table-wrap"><table><thead><tr><th>Kode</th><th>Deskripsi</th><th>Aksi</th></tr></thead><tbody>${exRows}</tbody></table></div></div>
+      <div class="card sect"><div class="sect-h"><span>Daftar Kode Delay (SS6)</span><span class="chip">${Object.keys(codes).length}</span></div>
+        <div class="table-wrap"><table><thead><tr><th>Kode</th><th>Deskripsi</th><th></th></tr></thead><tbody>${rows}</tbody></table></div></div>
+    </div>`;
+    if (opts && opts.add) delayModal();
+  }
+  function delayModal() {
+    const codes = (window.SS6_CODES && window.SS6_CODES.DELAY) || {};
+    const opt = Object.keys(codes).sort().map((c) => `<option value="${esc(c)}">${esc(c)} — ${esc(codes[c])}</option>`).join("");
+    const body = `
+      <div class="field"><label>Kode Delay</label><select id="dl-code">${opt}</select></div>
+      <div class="field"><label>Deskripsi (yang tampil di form)</label><input id="dl-desc" placeholder="cth: Tunggu Air" /></div>
+      <div class="hint">Delay ini akan muncul sebagai pilihan di form Loss (tipe Delay).</div>
+      <div class="modal-actions"><button class="btn primary block" data-act="save-delay">Simpan</button><button class="btn block" data-act="cancel">Batal</button></div>`;
+    const mo = openModal("Tambah Delay", body);
+    mo.root.querySelector('[data-act="cancel"]').onclick = mo.close;
+    mo.root.querySelector('[data-act="save-delay"]').onclick = async () => {
+      const code = mo.root.querySelector("#dl-code").value, desc = mo.root.querySelector("#dl-desc").value.trim();
+      if (!desc) { toast("Isi deskripsi"); return; }
+      const m = state.master;
+      m.delay_extra = m.delay_extra || []; m.delay_extra.push({ code, desc });
+      m.delay = m.delay || []; if (!m.delay.includes(desc)) m.delay.push(desc);
+      await Store.saveMaster(m); toast("Delay ditambahkan"); mo.close(); renderDelay();
+    };
   }
 
   /* ---------- LOADER LIST ---------- */
@@ -572,29 +724,33 @@
   /* ---------- SETTING ---------- */
   function renderSetting() {
     const m = state.master;
-    const ed = (title, key) => `<div class="card" style="margin-bottom:12px"><label>${esc(title)}</label><textarea id="set-${key}" rows="4">${esc((m[key] || []).join("\n"))}</textarea><div class="hint">Satu item per baris.</div></div>`;
-    app.innerHTML = `${appbar({ back: true, menu: true, crumb: "Setting" })}<div class="container">
-      <div class="page-title">Data Master (dropdown)</div>
-      ${ed("Materials", "materials")}${ed("Disposals", "disposals")}${ed("Problems", "problems")}${ed("Idle", "idle")}${ed("Delay", "delay")}
-      ${ed("Area", "areas")}${ed("PIT", "pits")}${ed("GL Pit", "gl_pit")}${ed("GL Road", "gl_road")}${ed("GL Disposal", "gl_disposal")}
-      <div class="card" style="margin-bottom:12px"><label>Loaders <span class="hint">(satu kode per baris)</span></label><textarea id="set-loaders" rows="5">${esc((m.loaders || []).map((l) => l.kode).join("\n"))}</textarea></div>
-      <button class="btn primary block" data-act="save-master">💾 Simpan</button>
-      <button class="btn block danger" data-act="reset-master" style="margin-top:10px">Kembalikan ke default</button></div>`;
+    const ed = (title, key, val) => `<div class="card ms-card"><div class="ms-h">${esc(title)}</div><textarea id="set-${key}" rows="4">${esc(val != null ? val : (m[key] || []).join("\n"))}</textarea><div class="hint">Satu item per baris.</div></div>`;
+    app.innerHTML = `${appbar({ crumb: "Setting" })}<div class="container">
+      <div class="page-head"><div class="page-title">Data Master</div>
+        <div class="actions"><button class="btn" data-act="reset-master">Default</button><button class="btn primary" data-act="save-master">${icon("save", 18)} Simpan</button></div></div>
+      <div class="ms-grid">
+        ${ed("Materials", "materials")}${ed("Disposals", "disposals")}${ed("Grade", "grades")}
+        ${ed("Problems", "problems")}${ed("Idle", "idle")}${ed("Delay", "delay")}
+        ${ed("Area", "areas")}${ed("PIT", "pits")}
+        ${ed("GL Pit", "gl_pit")}${ed("GL Road", "gl_road")}${ed("GL Disposal", "gl_disposal")}
+        ${ed("Loaders", "loaders", (m.loaders || []).map((l) => l.kode).join("\n"))}
+      </div></div>`;
   }
   async function saveMaster() {
     const m = state.master;
     const lines = (id) => document.getElementById(id).value.split("\n").map((s) => s.trim()).filter(Boolean);
-    ["materials", "disposals", "problems", "idle", "delay", "areas", "pits", "gl_pit", "gl_road", "gl_disposal"].forEach((k) => { m[k] = lines(`set-${k}`); });
+    ["materials", "disposals", "grades", "problems", "idle", "delay", "areas", "pits", "gl_pit", "gl_road", "gl_disposal"].forEach((k) => { m[k] = lines(`set-${k}`); });
     m.loaders = lines("set-loaders").map((k) => { const ex = (state.master.loaders || []).find((x) => x.kode === k); return ex || { kode: k, material_default: "OB", keterangan: "" }; });
     await Store.saveMaster(m); toast("Tersimpan"); route();
   }
 
   /* ---------- ACCOUNT ---------- */
   function renderAccount() {
-    app.innerHTML = `${appbar({ back: true, menu: true, crumb: "Account" })}<div class="container">
+    app.innerHTML = `${appbar({ crumb: "Account" })}<div class="container">
       <div class="page-title">Akun</div>
       <div class="card stack">
-        <div><label>NRP / Nama</label><div>${esc(state.user.nama)}</div></div>
+        <div><label>Nama</label><div style="font-size:17px;font-weight:600">${esc(state.user.nama)}</div></div>
+        <div><label>NRP</label><div>${esc(state.user.nrp)}</div></div>
         <div><label>Mode Data</label><div>${Store.mode === "supabase" ? "ONLINE (Supabase)" : "LOKAL (browser ini)"}</div></div>
         <button class="btn danger" data-act="logout">Keluar (Logout)</button>
       </div></div>`;
@@ -744,8 +900,13 @@
     switch (act) {
       case "back": history.back(); break;
       case "go-menu": location.hash = "#/"; break;
+      case "drawer": openDrawer(); break;
       case "nav": location.hash = el.getAttribute("data-to"); break;
-      case "logout": await Store.signOut(); state.user = null; state.master = null; renderLogin(); break;
+      case "logout": confirmModal("Keluar dari akun CCR?", async () => { await Store.signOut(); state.user = null; state.master = null; renderLogin(); }, "Ya, keluar"); break;
+      case "add-unit": unitModal(); break;
+      case "add-delay": delayModal(); break;
+      case "del-unit": { const kind = el.getAttribute("data-kind"), uid2 = el.getAttribute("data-id"); confirmModal(`Hapus unit ${uid2}?`, async () => { const m = state.master; if (kind === "dt") m.haulers_master = (m.haulers_master || []).filter((u) => u.lambung !== uid2); else m.loaders = (m.loaders || []).filter((l) => l.kode !== uid2); await Store.saveMaster(m); toast("Unit dihapus"); renderUnit(); }); break; }
+      case "del-delay": { const di = +el.getAttribute("data-i"); confirmModal("Hapus delay ini?", async () => { const m = state.master; const d = (m.delay_extra || [])[di]; (m.delay_extra || []).splice(di, 1); if (d) m.delay = (m.delay || []).filter((x) => x !== d.desc); await Store.saveMaster(m); toast("Delay dihapus"); renderDelay(); }); break; }
       case "tab": state.detailTab = el.getAttribute("data-tab"); renderLoaderDetail(LID); break;
       // loader
       case "add-loader": loaderModal(null); break;

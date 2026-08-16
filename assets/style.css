@@ -230,4 +230,80 @@ tr.foot td{font-weight:700; background:var(--surface-2); position:sticky; bottom
 tr.foot td.sticky-col{z-index:3;}
 .rowrit,.rowvol{font-weight:700;}
 
+/* ============================================================
+   LIQUID GLASS (iOS) + komponen: Navbar, Dashboard, Unit/Delay
+   ============================================================ */
+:root{ --glass:color-mix(in srgb, var(--surface) 68%, transparent); --glass-2:color-mix(in srgb, var(--surface) 82%, transparent);
+  --glass-brd:color-mix(in srgb, var(--border) 55%, transparent); --glass-blur:saturate(180%) blur(20px); --gloss:0 1px 0 rgba(255,255,255,.55) inset; }
+:root:not([data-theme="light"]) , [data-theme="dark"]{ --gloss:0 1px 0 rgba(255,255,255,.06) inset; }
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){ --gloss:0 1px 0 rgba(255,255,255,.06) inset; } }
+body{ background:
+    radial-gradient(60vmax 60vmax at 10% -10%, color-mix(in srgb,var(--primary) 15%, transparent), transparent 60%),
+    radial-gradient(52vmax 52vmax at 110% 8%, color-mix(in srgb,#22c7d9 12%, transparent), transparent 60%),
+    radial-gradient(60vmax 60vmax at 50% 118%, color-mix(in srgb,#ff8a5b 9%, transparent), transparent 60%),
+    var(--bg);
+  background-attachment:fixed; }
+.appbar{ background:var(--glass); -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur); border-bottom:1px solid var(--glass-brd); }
+.card,.banner,.dcard{ background:var(--glass-2); -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur); border:1px solid var(--glass-brd); box-shadow:var(--gloss), var(--shadow); }
+.modal{ background:var(--glass-2); -webkit-backdrop-filter:blur(28px) saturate(180%); backdrop-filter:blur(28px) saturate(180%); border:1px solid var(--glass-brd); box-shadow:var(--gloss), var(--shadow-lg); }
+.table-wrap{ background:var(--glass-2); -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur); border-color:var(--glass-brd); }
+
+/* Navbar drawer */
+.drawer-bg{position:fixed; inset:0; z-index:80; background:rgba(8,12,20,.4); opacity:0; pointer-events:none; transition:opacity .25s var(--ease);}
+.drawer-bg.open{opacity:1; pointer-events:auto;}
+.drawer{position:absolute; top:0; left:0; bottom:0; width:min(84vw,320px); padding:12px; display:flex; flex-direction:column;
+  background:var(--glass); -webkit-backdrop-filter:blur(30px) saturate(180%); backdrop-filter:blur(30px) saturate(180%);
+  border-right:1px solid var(--glass-brd); box-shadow:var(--gloss), var(--shadow-lg); transform:translateX(-102%); transition:transform .3s var(--ease);}
+.drawer-bg.open .drawer{transform:none;}
+.drawer-head{display:flex; align-items:center; justify-content:space-between; padding:6px 6px 12px;}
+.drawer-head .logo{font-weight:700; font-size:20px;}
+.drawer-body{overflow-y:auto; display:flex; flex-direction:column; gap:2px;}
+.nav-item{display:flex; align-items:center; gap:12px; padding:11px 12px; border-radius:12px; cursor:pointer; color:var(--text); font-size:15px; font-weight:500; transition:.14s var(--ease);}
+.nav-item:hover{background:var(--surface-2);}
+.nav-item.active{background:color-mix(in srgb,var(--primary) 15%, transparent); color:var(--primary);}
+.nav-item.active .ic{color:var(--primary);}
+.nav-item.danger{color:var(--danger);}
+.nav-item.danger:hover{background:var(--danger-soft);}
+.nav-grp{margin:2px 0;}
+.nav-gh{display:flex; align-items:center; gap:12px; padding:11px 12px; font-size:15px; font-weight:600; color:var(--muted);}
+.nav-sub{padding:9px 12px 9px 46px; border-radius:10px; cursor:pointer; font-size:14px; color:var(--muted); transition:.14s var(--ease);}
+.nav-sub:hover{background:var(--surface-2); color:var(--text);}
+.nav-sep{height:1px; background:var(--glass-brd); margin:8px 6px;}
+
+/* Dashboard */
+.dash-hi{font-size:var(--fs-lead); font-weight:600; letter-spacing:-.02em; margin:2px 0 14px;}
+.dstats{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:16px;}
+@media (max-width:560px){.dstats{grid-template-columns:1fr;}}
+.dcard{display:flex; align-items:center; gap:14px; border-radius:var(--radius); padding:16px;}
+.dcard .dic{flex:none; width:44px; height:44px; border-radius:12px; display:inline-flex; align-items:center; justify-content:center;}
+.dcard .dic.blue{background:var(--accent-soft); color:var(--primary);}
+.dcard .dic.green{background:var(--success-soft); color:var(--success);}
+.dcard .dic.amber{background:var(--warning-soft); color:var(--warning);}
+.dcard .n{font-size:26px; font-weight:600; letter-spacing:-.02em; line-height:1; font-variant-numeric:tabular-nums;}
+.dcard .n .ns{font-size:15px; color:var(--faint); font-weight:500;}
+.dcard .t{font-size:12.5px; color:var(--muted); margin-top:4px;}
+.dchart-h{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;}
+.dchart-h .pt{font-weight:600; font-size:15px;}
+.bars{display:flex; align-items:stretch; gap:6px; height:190px;}
+.bcol{flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; min-width:0;}
+.bval{font-size:11px; font-weight:600; color:var(--muted); font-variant-numeric:tabular-nums; height:14px; line-height:14px;}
+.btrack{width:100%; max-width:28px; flex:1; display:flex; align-items:flex-end; border-radius:8px; overflow:hidden; background:var(--surface-2);}
+.bfill{width:100%; border-radius:8px 8px 0 0; background:linear-gradient(180deg, var(--primary), var(--primary-2)); min-height:2px; transition:height .5s var(--ease);}
+.blbl{font-size:10px; color:var(--faint); font-variant-numeric:tabular-nums;}
+
+/* Page head + section cards (Unit/Delay/master) */
+.page-head{display:flex; align-items:center; justify-content:space-between; gap:12px; margin:2px 0 16px; flex-wrap:wrap;}
+.page-head .page-title{margin:0;}
+.sect{padding:0; overflow:hidden; margin-bottom:16px;}
+.sect-h{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:14px 16px; font-weight:600; font-size:14px;}
+.sect .table-wrap{border:none; box-shadow:none; border-radius:0; background:transparent; -webkit-backdrop-filter:none; backdrop-filter:none;}
+.sect .table-wrap table{background:transparent;}
+
+/* Setting: grid kartu master */
+.ms-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:12px;}
+@media (max-width:640px){.ms-grid{grid-template-columns:1fr;}}
+.ms-card{padding:14px;}
+.ms-h{font-weight:600; font-size:13px; margin-bottom:10px;}
+.ms-card textarea{font-size:14px;}
+
 @media (prefers-reduced-motion:reduce){ *{animation-duration:.001ms !important; transition:none !important;} }
