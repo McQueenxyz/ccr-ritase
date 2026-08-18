@@ -410,9 +410,7 @@
         const detail = `${j} · ${r} rit` + (parts.length ? " · " + parts.join(" · ") : (hasData ? "" : " · belum diisi"));
         return `<div class="ccell"><div class="jlbl">${j.slice(0, 2)}</div><div class="cbar ${now ? "now" : ""}" data-act="open-ritase" data-id="${l.id}" data-tip="${esc(detail)}"><div class="cbar-fill" style="${grad}"></div></div><div class="cnum">${r || ""}</div></div>`;
       };
-      const half = Math.ceil(jams.length / 2);
-      const grid = (arr) => `<div class="fleet-grid" style="grid-template-columns:repeat(${arr.length},minmax(30px,1fr))">${arr.map(cell).join("")}</div>`;
-      return `<div class="fleet-rows">${grid(jams.slice(0, half))}${grid(jams.slice(half))}</div>`;
+      return `<div class="mx-scroll"><div class="fleet-grid">${jams.map(cell).join("")}</div></div>`;
     };
     if (loaders.length) {
       papan = `${nowJam && belum > 0 ? `<div class="banner">
@@ -453,7 +451,7 @@
         <div><label>Tanggal</label><input type="date" id="f-tgl" value="${state.tanggal}"></div>
         <div class="grow"><label>Shift</label><select id="f-shift">${shiftOpts}</select></div>
         <button class="btn primary" data-act="add-loader">＋ Tambah Loader</button>
-      </div>${papan}${rows}</div>`;
+      </div>${papan}<div class="fleet-list">${rows}</div></div>`;
     document.getElementById("f-tgl").onchange = (e) => { state.tanggal = e.target.value; renderLoaders(); };
     document.getElementById("f-shift").onchange = (e) => { state.shift = e.target.value; renderLoaders(); };
   }

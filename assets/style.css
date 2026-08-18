@@ -206,13 +206,14 @@ tbody tr:hover td.empty{background:transparent;}
 /* Fleet card: 1 loader = 1 card, bar per jam di dalamnya */
 .papan-head{display:flex; align-items:center; gap:10px; margin:6px 2px 12px;}
 .papan-head .pt{font-weight:600; font-size:17px; letter-spacing:-.01em;}
-.fleet-card{margin-bottom:14px;}
+.fleet-list{display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:start;}
+@media (max-width:760px){ .fleet-list{grid-template-columns:1fr;} }
+.fleet-card{margin-bottom:0;}
 .fleet-top{display:flex; align-items:flex-start; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:14px;}
-.fleet-rows{display:grid; gap:10px;}
-.fleet-grid{display:grid; gap:5px; align-items:end;}
+.fleet-grid{display:flex; gap:5px; align-items:end;}
 .jlbl{font-size:10px; color:var(--faint); text-align:center; font-variant-numeric:tabular-nums;}
-/* Papan Shift: sel = BAR waktu 60' seragam (worked/delay/idle) */
-.ccell{display:flex; flex-direction:column; align-items:center; gap:4px; min-width:0;}
+/* Papan Shift: sel = BAR waktu 60' seragam, rapat (lebar tetap) */
+.ccell{flex:0 0 30px; width:30px; display:flex; flex-direction:column; align-items:center; gap:4px; min-width:0;}
 .cbar{position:relative; width:100%; max-width:32px; height:100px; border-radius:8px; overflow:hidden; cursor:pointer; background:var(--surface-2); border:1px solid var(--border); transition:box-shadow .14s var(--ease);}
 .cbar.now{box-shadow:0 0 0 2px var(--warning) inset;}
 .cbar:hover{box-shadow:0 0 0 2px var(--primary) inset;}
