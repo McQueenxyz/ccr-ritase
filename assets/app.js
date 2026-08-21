@@ -980,14 +980,38 @@
         hourly.push({ tanggal: l.tanggal, shift: l.shift, jam: j, unit: l.loader, mat: domMat, pp, lossMin, ewhH, planBcm, actual, timeLoss, prodVar, total: actual - planBcm });
       });
     });
+    // ---- Plan vs Actual: Idle / Delay / Breakdown ----
+    // Actual dikelompokkan per kode SS6; plan diskalakan ke MOHH yang tercatat.
+    const mohhTotalH = Object.keys(perPC).reduce((a, k) => a + perPC[k].mohh, 0);
+    const grupOf = (type, code) => (String(code).toUpperCase() === "B01" ? "breakdown" : type === "idle" ? "idle" : "delay");
+    const actByCode = {};
+    losses.forEach((x) => {
+      const l = byId[x.loader_id]; if (!l) return;
+      const code = (resolveCode(x.type, x.category).code || "").split(",")[0].trim().toUpperCase();
+      const key = code || ("~" + (x.category || "-"));
+      const a = actByCode[key] = actByCode[key] || { code, label: x.category || "-", grup: grupOf(x.type, code), menit: 0, n: 0 };
+      a.menit += num(x.duration); a.n += 1;
+    });
+    const planRows = (CFG.LOSS_PLAN || []).map((p) => {
+      const perDay = p.perDay != null ? p.perDay : (p.perWeek || 0) / 7;
+      const planMnt = perDay * (mohhTotalH / 24);
+      const act = actByCode[p.code];
+      if (act) act.__planned = true;
+      return { code: p.code, label: p.label, grup: p.grup, plan: planMnt, actual: act ? act.menit : 0, n: act ? act.n : 0 };
+    });
+    // loss aktual yang tak ada di plan
+    Object.keys(actByCode).forEach((k) => { const a = actByCode[k]; if (a.__planned) return; planRows.push({ code: a.code || "—", label: a.label, grup: a.grup, plan: 0, actual: a.menit, n: a.n, extra: true }); });
+    const planSum = { breakdown: { plan: 0, actual: 0 }, idle: { plan: 0, actual: 0 }, delay: { plan: 0, actual: 0 } };
+    planRows.forEach((r) => { const s = planSum[r.grup] || planSum.delay; s.plan += r.plan; s.actual += r.actual; });
+
     const list = Object.keys(perPC).sort().map((k) => { const p = perPC[k]; p.total = p.actual - p.plan; p.actProd = p.ewh > 0 ? p.actual / p.ewh : 0; return p; });
     const T = list.reduce((a, p) => ({ mohh: a.mohh + p.mohh, loss: a.loss + p.loss, ewh: a.ewh + p.ewh, plan: a.plan + p.plan, actual: a.actual + p.actual, timeLoss: a.timeLoss + p.timeLoss, prodVar: a.prodVar + p.prodVar }), { mohh: 0, loss: 0, ewh: 0, plan: 0, actual: 0, timeLoss: 0, prodVar: 0 });
     T.total = T.actual - T.plan;
-    return { list, T, hourly, loaders };
+    return { list, T, hourly, loaders, planRows, planSum };
   }
   async function renderGainLoss() {
     if (!state.prodFrom) { state.prodFrom = state.tanggal; state.prodTo = state.tanggal; state.prodShift = ""; }
-    const { list, T, hourly } = await gainLossData();
+    const { list, T, hourly, planRows, planSum } = await gainLossData();
     const R1 = (n) => (Math.round(n * 10) / 10).toLocaleString("id-ID");
     const sign = (n) => (n >= 0 ? "+" : "") + R1(n);
     const cls = (n) => (n >= 0 ? "gl-up" : "gl-dn");
@@ -1005,6 +1029,22 @@
         <td class="num">${R1(h.pp)}</td><td class="num">${h.lossMin}'</td><td class="num">${R1(h.planBcm)}</td><td class="num">${R1(h.actual)}</td>
         <td class="num ${cls(h.total)}">${sign(h.total)}</td></tr>`).join("") || `<tr><td colspan="9" class="empty">—</td></tr>`;
     const shiftOpts = `<option value="">Semua shift</option>` + state.master.shifts.map((s) => `<option value="${s.kode}" ${s.kode === state.prodShift ? "selected" : ""}>${esc(s.label)}</option>`).join("");
+    // ---- Plan vs Actual (idle/delay/breakdown) ----
+    const GRP = [["breakdown", "Breakdown"], ["idle", "Idle"], ["delay", "Delay"]];
+    let totPlanM = 0, totActM = 0;
+    const pvaRows = GRP.map(([g, gl]) => {
+      const rows = planRows.filter((r) => r.grup === g).sort((a, b) => b.actual - a.actual || b.plan - a.plan);
+      if (!rows.length) return "";
+      const s = planSum[g] || { plan: 0, actual: 0 };
+      totPlanM += s.plan; totActM += s.actual;
+      const dS = s.actual - s.plan;
+      const head = `<tr class="cls-main"><td><b>${gl}</b></td><td></td><td class="num"><b>${R1(s.plan / 60)}</b></td><td class="num"><b>${R1(s.actual / 60)}</b></td><td class="num ${dS <= 0 ? "gl-up" : "gl-dn"}"><b>${sign(dS / 60)}</b></td><td>${dS <= 0 ? '<span class="chip ok">di bawah plan</span>' : '<span class="chip loss">lewat plan</span>'}</td></tr>`;
+      const body = rows.map((r) => {
+        const d = r.actual - r.plan;
+        return `<tr class="cls-sub"><td>${esc(r.label)}${r.extra ? ' <span class="chip wait">tanpa plan</span>' : ""}</td><td>${esc(r.code)}</td><td class="num">${R1(r.plan / 60)}</td><td class="num">${R1(r.actual / 60)}</td><td class="num ${d <= 0 ? "gl-up" : "gl-dn"}">${sign(d / 60)}</td><td>${r.n ? r.n + "×" : "—"}</td></tr>`;
+      }).join("");
+      return head + body;
+    }).join("") || `<tr><td colspan="6" class="empty">Tidak ada data pada rentang ini.</td></tr>`;
     // waterfall bar sederhana
     const maxV = Math.max(T.plan, T.actual, 1);
     const wf = `<div class="wf">
@@ -1029,6 +1069,10 @@
       <div class="card sect"><div class="sect-h"><span>Waterfall</span><span class="chip">${R1(T.mohh)} jam MOHH · ${R1(T.ewh)} jam EWH</span></div><div class="sect-b">${wf}</div></div>
       <div class="card sect"><div class="sect-h"><span>Per PC (Unit)</span><span class="chip">${list.length}</span></div><div class="sect-b">
         <div class="table-wrap"><table><thead><tr><th>Unit</th><th class="num">MOHH<br><small>jam</small></th><th class="num">Loss<br><small>jam</small></th><th class="num">EWH<br><small>jam</small></th><th class="num">Plan<br><small>BCM/jam</small></th><th class="num">Actual<br><small>BCM/jam</small></th><th class="num">Plan<br><small>BCM</small></th><th class="num">Actual<br><small>BCM</small></th><th class="num">Time Loss<br><small>BCM</small></th><th class="num">Prod. G/L<br><small>BCM</small></th><th class="num">Total G/L<br><small>BCM</small></th></tr></thead><tbody>${rows}</tbody></table></div></div></div>
+      <div class="card sect"><div class="sect-h"><span>Plan vs Actual — Idle / Delay / Breakdown</span><span class="chip">jam</span></div><div class="sect-b">
+        <div class="table-wrap"><table><thead><tr><th>Keterangan</th><th>Kode</th><th class="num">Plan</th><th class="num">Actual</th><th class="num">Selisih</th><th>Status</th></tr></thead><tbody>${pvaRows}</tbody>
+        <tfoot><tr><td><b>TOTAL</b></td><td></td><td class="num"><b>${R1(totPlanM / 60)}</b></td><td class="num"><b>${R1(totActM / 60)}</b></td><td class="num ${totActM - totPlanM <= 0 ? "gl-up" : "gl-dn"}"><b>${sign((totActM - totPlanM) / 60)}</b></td><td></td></tr></tfoot></table></div>
+        <div class="hint">Plan diskalakan ke MOHH yang tercatat (${R1(T.mohh)} jam). <b>Selisih negatif = lebih baik dari plan</b> (loss lebih sedikit).</div></div></div>
       <div class="card sect"><div class="sect-h"><span>Detail per Jam</span><span class="chip">${hourly.filter((h) => h.actual > 0 || h.lossMin > 0).length}</span></div><div class="sect-b">
         <div class="table-wrap"><table class="sortable"><thead><tr><th class="sortable">Tanggal ${sortChev}</th><th class="sortable">Jam ${sortChev}</th><th class="sortable">Unit ${sortChev}</th><th>Material</th><th class="num">Plan/jam</th><th class="num">Loss</th><th class="num">Plan BCM</th><th class="num">Actual BCM</th><th class="sortable num" data-num="1">Gain/Loss ${sortChev}</th></tr></thead><tbody>${hRows}</tbody></table></div>
         <div class="hint">MOHH tiap jam = 60 menit. EWH = 60 − (delay + idle + breakdown). Jam tanpa input dihitung sebagai kehilangan waktu.</div></div></div>
@@ -1039,7 +1083,8 @@
   }
   async function exportGainLoss() {
     if (!window.XLSX) { toast("Library Excel belum termuat"); return; }
-    const { list, T, hourly } = await gainLossData();
+    const dataPVA = await gainLossData();
+    const { list, T, hourly } = dataPVA;
     if (!list.length) { toast("Tidak ada data pada rentang ini"); return; }
     const R = (n) => Math.round(n * 100) / 100;
     const wb = XLSX.utils.book_new();
@@ -1053,6 +1098,17 @@
     add("Per PC", [["Unit", "Model", "MOHH (jam)", "Loss (jam)", "EWH (jam)", "Plan (BCM/jam)", "Actual (BCM/jam)", "Plan BCM", "Actual BCM", "Time Loss (BCM)", "Prod Gain/Loss (BCM)", "Total Gain/Loss (BCM)"]]
       .concat(list.map((p) => [p.unit, p.model, R(p.mohh), R(p.loss), R(p.ewh), R(p.pp), R(p.actProd), R(p.plan), R(p.actual), -R(p.timeLoss), R(p.prodVar), R(p.total)]))
       .concat([["TOTAL", "", R(T.mohh), R(T.loss), R(T.ewh), "", "", R(T.plan), R(T.actual), -R(T.timeLoss), R(T.prodVar), R(T.total)]]));
+    const gl2 = { breakdown: "Breakdown", idle: "Idle", delay: "Delay" };
+    const pva = [["Grup", "Keterangan", "Kode", "Plan (jam)", "Actual (jam)", "Selisih (jam)", "Kejadian"]];
+    ["breakdown", "idle", "delay"].forEach((g) => {
+      const rows = (dataPVA.planRows || []).filter((r) => r.grup === g).sort((a, b) => b.actual - a.actual);
+      if (!rows.length) return;
+      const s = dataPVA.planSum[g];
+      pva.push([gl2[g], "SUBTOTAL", "", R(s.plan / 60), R(s.actual / 60), R((s.actual - s.plan) / 60), ""]);
+      rows.forEach((r) => pva.push(["", r.label, r.code, R(r.plan / 60), R(r.actual / 60), R((r.actual - r.plan) / 60), r.n || 0]));
+    });
+    add("Plan vs Actual Loss", pva);
+
     add("Per Jam", [["Tanggal", "Shift", "Jam", "Unit", "Material", "Plan (BCM/jam)", "Loss (menit)", "EWH (jam)", "Plan BCM", "Actual BCM", "Time Loss (BCM)", "Prod G/L (BCM)", "Total G/L (BCM)"]]
       .concat(hourly.map((h) => [h.tanggal, "Shift " + h.shift, h.jam, h.unit, normMat(h.mat), R(h.pp), h.lossMin, R(h.ewhH), R(h.planBcm), R(h.actual), -R(h.timeLoss), R(h.prodVar), R(h.total)])));
     XLSX.writeFile(wb, `Gain_Loss_${state.prodFrom}_sd_${state.prodTo}.xlsx`);
