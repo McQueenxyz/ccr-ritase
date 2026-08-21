@@ -31,6 +31,11 @@ window.APP_CONFIG = {
   // Model tiap loader (Exca) + target produksi per shift per model.
   // Jika BCM shift loader >= target → target tercapai (loss tak wajib diisi).
   UNIT_MODEL: { E5416: "PC400", E5418: "PC400", E5422: "PC400", E5314: "PC300", E5312: "PC300", E5168: "PC200", E5167: "PC200", E5189: "PC200", E5157: "PC200" },
+
+  // PLAN PRODUKTIVITAS (BCM/jam) — dasar hitung Gain & Loss (waterfall DPR).
+  // ob = OB/Quarry, ore = Ore Getting/Hauling. Per unit (menimpa nilai model).
+  PLAN_PDTY_MODEL: { PC400: { ob: 200, ore: 334 }, PC300: { ob: 158, ore: 158 }, PC200: { ob: 70, ore: 70 } },
+  PLAN_PDTY_UNIT: { E5314: { ore: 158 }, E5312: { ore: 210 }, E5422: { ore: 334 } },
   TARGETS: { PC400: { bcm: 200, rit: 16 }, PC300: { bcm: 200, rit: 16 }, PC200: { bcm: 70, rit: 0 } },
 
   // Akun terdaftar (mode lokal): NRP -> { pw, nama }.

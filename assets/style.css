@@ -319,6 +319,19 @@ body{ background:
 .sect .table-wrap table{background:transparent;}
 
 /* Setting: grid kartu master */
+/* Gain & Loss (waterfall) */
+.gl-up{color:#1a8f3c;} .gl-dn{color:var(--danger);}
+[data-theme="dark"] .gl-up{color:#30d158;}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .gl-up{color:#30d158;} }
+.wf{display:grid; gap:10px;}
+.wf-row{display:grid; grid-template-columns:120px 1fr 92px; align-items:center; gap:12px;}
+.wf-l{font-size:13px; color:var(--muted);}
+.wf-b{height:16px; background:var(--surface-2); border-radius:6px; overflow:hidden;}
+.wf-b i{display:block; height:100%; border-radius:6px; min-width:2px;}
+.wf-v{text-align:right; font-weight:600; font-size:13px; font-variant-numeric:tabular-nums;}
+thead th small{font-weight:400; opacity:.7; font-size:10px;}
+@media (max-width:600px){ .wf-row{grid-template-columns:88px 1fr 76px; gap:8px;} }
+
 /* Data Master — form input */
 .sect-b{padding:0 16px 16px;}
 .ms-form{display:grid; gap:12px; margin:14px 0 12px;}

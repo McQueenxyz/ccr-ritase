@@ -134,6 +134,7 @@
     if (h.startsWith("#/unit")) return renderUnit({ add: h.indexOf("/add") >= 0 });
     if (h.startsWith("#/delay")) return renderDelay({ add: h.indexOf("/add") >= 0 });
     if (h.startsWith("#/produksi")) return renderProduksi();
+    if (h.startsWith("#/gainloss")) return renderGainLoss();
     if (h.startsWith("#/setting")) return renderSetting();
     if (h.startsWith("#/account")) return renderAccount();
     if (h.startsWith("#/form")) return renderLoaders();
@@ -230,6 +231,7 @@
       ${it("#/form", "mineral", "Form Ritase")}
       ${it("#/report", "chat", "Report")}
       ${it("#/produksi", "grid", "Laporan Produksi")}
+      ${it("#/gainloss", "box", "Gain & Loss")}
       <div class="nav-grp"><div class="nav-gh">${icon("truck", 18)}<span>Unit</span></div>
         <div class="nav-sub" data-to="#/unit">Daftar Populasi Unit</div>
         <div class="nav-sub" data-to="#/unit/add">Tambah Unit</div></div>
@@ -886,6 +888,139 @@
     toast("Laporan diunduh");
   }
 
+  /* ---------- GAIN & LOSS (waterfall: MOHH → Loss → EWH → BCM) ----------
+     MOHH   = jam tersedia (tiap jam pada shift = 60 menit)
+     Loss   = delay + idle + breakdown (menit, dari input CCR)
+     EWH    = MOHH - Loss
+     Plan   = plan produktivitas (BCM/jam) × MOHH
+     Time Loss (BCM)      = plan/jam × Loss(jam)          → kehilangan karena waktu
+     Prod Gain/Loss (BCM) = Actual - (plan/jam × EWH)     → selisih produktivitas
+     Total  = Actual - Plan  ( = Prod Gain/Loss - Time Loss ) */
+  const matGroup = (m) => (/ore/i.test(String(m || "")) ? "ore" : "ob");
+  function planPdty(loader, material) {
+    const g = matGroup(material);
+    const u = (CFG.PLAN_PDTY_UNIT || {})[loader];
+    if (u && u[g] != null) return num(u[g]);
+    const model = (CFG.UNIT_MODEL || {})[loader];
+    const pm = (CFG.PLAN_PDTY_MODEL || {})[model];
+    return pm && pm[g] != null ? num(pm[g]) : 0;
+  }
+  async function gainLossData() {
+    const { loaders, haulers, losses } = await Store.listRange(state.prodFrom, state.prodTo, state.prodShift);
+    const byId = {}; loaders.forEach((l) => (byId[l.id] = l));
+    // loss per loader per jam (menit)
+    const lossLJ = {};
+    losses.forEach((x) => { const lj = lossLJ[x.loader_id] = lossLJ[x.loader_id] || {}; lj[x.jam] = (lj[x.jam] || 0) + num(x.duration); });
+    // ritase & material dominan per loader per jam
+    const ritLJ = {}, matLJ = {};
+    haulers.forEach((h) => {
+      const l = byId[h.loader_id]; if (!l) return;
+      const f = bcmPerRit(l.loader, h.material);
+      Object.keys(h.rit || {}).forEach((j) => {
+        const r = num(h.rit[j]); if (r <= 0) return;
+        (ritLJ[h.loader_id] = ritLJ[h.loader_id] || {})[j] = ((ritLJ[h.loader_id] || {})[j] || 0) + r * f;
+        const mm = (matLJ[h.loader_id] = matLJ[h.loader_id] || {}); mm[j] = mm[j] || {}; mm[j][h.material] = (mm[j][h.material] || 0) + r;
+      });
+    });
+    const perPC = {}, hourly = [];
+    loaders.forEach((l) => {
+      const jams = String(l.shift) === "2" ? state.master.jam_shift2 : state.master.jam_shift1;
+      const rj = ritLJ[l.id] || {}, lj = lossLJ[l.id] || {}, mj = matLJ[l.id] || {};
+      jams.forEach((j) => {
+        const actual = num(rj[j]);
+        const lossMin = Math.min(60, num(lj[j]));
+        const matsAtJ = mj[j] || {};
+        const domMat = Object.keys(matsAtJ).sort((a, b) => matsAtJ[b] - matsAtJ[a])[0] || "OB";
+        const pp = planPdty(l.loader, domMat);
+        const ewhH = (60 - lossMin) / 60, mohhH = 1;
+        const planBcm = pp * mohhH;
+        const timeLoss = pp * (lossMin / 60);
+        const prodVar = actual - pp * ewhH;
+        const p = perPC[l.loader] = perPC[l.loader] || { unit: l.loader, model: (CFG.UNIT_MODEL || {})[l.loader] || "-", pp, mohh: 0, loss: 0, ewh: 0, plan: 0, actual: 0, timeLoss: 0, prodVar: 0 };
+        p.pp = pp; p.mohh += mohhH; p.loss += lossMin / 60; p.ewh += ewhH;
+        p.plan += planBcm; p.actual += actual; p.timeLoss += timeLoss; p.prodVar += prodVar;
+        hourly.push({ tanggal: l.tanggal, shift: l.shift, jam: j, unit: l.loader, mat: domMat, pp, lossMin, ewhH, planBcm, actual, timeLoss, prodVar, total: actual - planBcm });
+      });
+    });
+    const list = Object.keys(perPC).sort().map((k) => { const p = perPC[k]; p.total = p.actual - p.plan; p.actProd = p.ewh > 0 ? p.actual / p.ewh : 0; return p; });
+    const T = list.reduce((a, p) => ({ mohh: a.mohh + p.mohh, loss: a.loss + p.loss, ewh: a.ewh + p.ewh, plan: a.plan + p.plan, actual: a.actual + p.actual, timeLoss: a.timeLoss + p.timeLoss, prodVar: a.prodVar + p.prodVar }), { mohh: 0, loss: 0, ewh: 0, plan: 0, actual: 0, timeLoss: 0, prodVar: 0 });
+    T.total = T.actual - T.plan;
+    return { list, T, hourly, loaders };
+  }
+  async function renderGainLoss() {
+    if (!state.prodFrom) { state.prodFrom = state.tanggal; state.prodTo = state.tanggal; state.prodShift = ""; }
+    const { list, T, hourly } = await gainLossData();
+    const R1 = (n) => (Math.round(n * 10) / 10).toLocaleString("id-ID");
+    const sign = (n) => (n >= 0 ? "+" : "") + R1(n);
+    const cls = (n) => (n >= 0 ? "gl-up" : "gl-dn");
+    const rows = list.length ? list.map((p) => `<tr>
+        <td><b>${esc(p.unit)}</b><div class="hint" style="margin:0">${esc(p.model)}</div></td>
+        <td class="num">${R1(p.mohh)}</td><td class="num">${R1(p.loss)}</td><td class="num">${R1(p.ewh)}</td>
+        <td class="num">${R1(p.pp)}</td><td class="num">${R1(p.actProd)}</td>
+        <td class="num">${R1(p.plan)}</td><td class="num">${R1(p.actual)}</td>
+        <td class="num gl-dn">−${R1(p.timeLoss)}</td>
+        <td class="num ${cls(p.prodVar)}">${sign(p.prodVar)}</td>
+        <td class="num ${cls(p.total)}"><b>${sign(p.total)}</b></td></tr>`).join("")
+      : `<tr><td colspan="11" class="empty">Tidak ada data pada rentang ini.</td></tr>`;
+    const hRows = hourly.filter((h) => h.actual > 0 || h.lossMin > 0).sort((a, b) => (a.tanggal + a.jam + a.unit).localeCompare(b.tanggal + b.jam + b.unit)).slice(0, 400)
+      .map((h) => `<tr><td>${esc(fmtID(h.tanggal))}</td><td>${esc(h.jam)}</td><td>${esc(h.unit)}</td><td>${esc(normMat(h.mat))}</td>
+        <td class="num">${R1(h.pp)}</td><td class="num">${h.lossMin}'</td><td class="num">${R1(h.planBcm)}</td><td class="num">${R1(h.actual)}</td>
+        <td class="num ${cls(h.total)}">${sign(h.total)}</td></tr>`).join("") || `<tr><td colspan="9" class="empty">—</td></tr>`;
+    const shiftOpts = `<option value="">Semua shift</option>` + state.master.shifts.map((s) => `<option value="${s.kode}" ${s.kode === state.prodShift ? "selected" : ""}>${esc(s.label)}</option>`).join("");
+    // waterfall bar sederhana
+    const maxV = Math.max(T.plan, T.actual, 1);
+    const wf = `<div class="wf">
+      <div class="wf-row"><span class="wf-l">Plan (MOHH)</span><span class="wf-b"><i style="width:${(T.plan / maxV) * 100}%;background:var(--muted)"></i></span><span class="wf-v">${R1(T.plan)}</span></div>
+      <div class="wf-row"><span class="wf-l">Time Loss</span><span class="wf-b"><i style="width:${(T.timeLoss / maxV) * 100}%;background:#ffcc00"></i></span><span class="wf-v gl-dn">−${R1(T.timeLoss)}</span></div>
+      <div class="wf-row"><span class="wf-l">Produktivitas</span><span class="wf-b"><i style="width:${(Math.abs(T.prodVar) / maxV) * 100}%;background:${T.prodVar >= 0 ? "#34c759" : "var(--danger)"}"></i></span><span class="wf-v ${cls(T.prodVar)}">${sign(T.prodVar)}</span></div>
+      <div class="wf-row"><span class="wf-l">Actual</span><span class="wf-b"><i style="width:${(T.actual / maxV) * 100}%;background:var(--primary)"></i></span><span class="wf-v">${R1(T.actual)}</span></div>
+    </div>`;
+    app.innerHTML = `${appbar({ crumb: "Gain & Loss" })}<div class="container">
+      <div class="page-title">Gain &amp; Loss (BCM)</div>
+      <div class="toolbar">
+        <div><label>Dari tanggal</label><input type="date" id="g-from" value="${state.prodFrom}"></div>
+        <div><label>Sampai tanggal</label><input type="date" id="g-to" value="${state.prodTo}"></div>
+        <div class="grow"><label>Shift</label><select id="g-shift">${shiftOpts}</select></div>
+        <button class="btn primary" data-act="gl-export">${icon("download", 18)} Export Excel</button>
+      </div>
+      <div class="dstats">
+        <div class="dcard"><span class="dic blue">${icon("box", 20)}</span><div><div class="n">${R1(T.plan)}</div><div class="t">Plan BCM (MOHH)</div></div></div>
+        <div class="dcard"><span class="dic green">${icon("truck", 20)}</span><div><div class="n">${R1(T.actual)}</div><div class="t">Actual BCM</div></div></div>
+        <div class="dcard"><span class="dic ${T.total >= 0 ? "green" : "amber"}">${icon("clock", 20)}</span><div><div class="n ${cls(T.total)}">${sign(T.total)}</div><div class="t">Total Gain / Loss</div></div></div>
+      </div>
+      <div class="card sect"><div class="sect-h"><span>Waterfall</span><span class="chip">${R1(T.mohh)} jam MOHH · ${R1(T.ewh)} jam EWH</span></div><div class="sect-b">${wf}</div></div>
+      <div class="card sect"><div class="sect-h"><span>Per PC (Unit)</span><span class="chip">${list.length}</span></div><div class="sect-b">
+        <div class="table-wrap"><table><thead><tr><th>Unit</th><th class="num">MOHH<br><small>jam</small></th><th class="num">Loss<br><small>jam</small></th><th class="num">EWH<br><small>jam</small></th><th class="num">Plan<br><small>BCM/jam</small></th><th class="num">Actual<br><small>BCM/jam</small></th><th class="num">Plan<br><small>BCM</small></th><th class="num">Actual<br><small>BCM</small></th><th class="num">Time Loss<br><small>BCM</small></th><th class="num">Prod. G/L<br><small>BCM</small></th><th class="num">Total G/L<br><small>BCM</small></th></tr></thead><tbody>${rows}</tbody></table></div></div></div>
+      <div class="card sect"><div class="sect-h"><span>Detail per Jam</span><span class="chip">${hourly.filter((h) => h.actual > 0 || h.lossMin > 0).length}</span></div><div class="sect-b">
+        <div class="table-wrap"><table class="sortable"><thead><tr><th class="sortable">Tanggal ${sortChev}</th><th class="sortable">Jam ${sortChev}</th><th class="sortable">Unit ${sortChev}</th><th>Material</th><th class="num">Plan/jam</th><th class="num">Loss</th><th class="num">Plan BCM</th><th class="num">Actual BCM</th><th class="sortable num" data-num="1">Gain/Loss ${sortChev}</th></tr></thead><tbody>${hRows}</tbody></table></div>
+        <div class="hint">MOHH tiap jam = 60 menit. EWH = 60 − (delay + idle + breakdown). Jam tanpa input dihitung sebagai kehilangan waktu.</div></div></div>
+    </div>`;
+    document.getElementById("g-from").onchange = (e) => { state.prodFrom = e.target.value; renderGainLoss(); };
+    document.getElementById("g-to").onchange = (e) => { state.prodTo = e.target.value; renderGainLoss(); };
+    document.getElementById("g-shift").onchange = (e) => { state.prodShift = e.target.value; renderGainLoss(); };
+  }
+  async function exportGainLoss() {
+    if (!window.XLSX) { toast("Library Excel belum termuat"); return; }
+    const { list, T, hourly } = await gainLossData();
+    if (!list.length) { toast("Tidak ada data pada rentang ini"); return; }
+    const R = (n) => Math.round(n * 100) / 100;
+    const wb = XLSX.utils.book_new();
+    const add = (n, aoa) => XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aoa), n);
+    add("Ringkasan", [["GAIN & LOSS (BCM) — CCR"], [CFG.COMPANY], [],
+      ["Periode", fmtID(state.prodFrom) + " s/d " + fmtID(state.prodTo)],
+      ["Shift", state.prodShift ? "Shift " + state.prodShift : "Semua shift"], [],
+      ["MOHH (jam)", R(T.mohh)], ["Loss (jam)", R(T.loss)], ["EWH (jam)", R(T.ewh)], [],
+      ["Plan BCM (MOHH)", R(T.plan)], ["Time Loss (BCM)", -R(T.timeLoss)], ["Produktivitas (BCM)", R(T.prodVar)], ["Actual BCM", R(T.actual)],
+      ["TOTAL GAIN/LOSS (BCM)", R(T.total)]]);
+    add("Per PC", [["Unit", "Model", "MOHH (jam)", "Loss (jam)", "EWH (jam)", "Plan (BCM/jam)", "Actual (BCM/jam)", "Plan BCM", "Actual BCM", "Time Loss (BCM)", "Prod Gain/Loss (BCM)", "Total Gain/Loss (BCM)"]]
+      .concat(list.map((p) => [p.unit, p.model, R(p.mohh), R(p.loss), R(p.ewh), R(p.pp), R(p.actProd), R(p.plan), R(p.actual), -R(p.timeLoss), R(p.prodVar), R(p.total)]))
+      .concat([["TOTAL", "", R(T.mohh), R(T.loss), R(T.ewh), "", "", R(T.plan), R(T.actual), -R(T.timeLoss), R(T.prodVar), R(T.total)]]));
+    add("Per Jam", [["Tanggal", "Shift", "Jam", "Unit", "Material", "Plan (BCM/jam)", "Loss (menit)", "EWH (jam)", "Plan BCM", "Actual BCM", "Time Loss (BCM)", "Prod G/L (BCM)", "Total G/L (BCM)"]]
+      .concat(hourly.map((h) => [h.tanggal, "Shift " + h.shift, h.jam, h.unit, normMat(h.mat), R(h.pp), h.lossMin, R(h.ewhH), R(h.planBcm), R(h.actual), -R(h.timeLoss), R(h.prodVar), R(h.total)])));
+    XLSX.writeFile(wb, `Gain_Loss_${state.prodFrom}_sd_${state.prodTo}.xlsx`);
+    toast("Laporan Gain & Loss diunduh");
+  }
+
   /* ---------- SETTING ---------- */
   function renderSetting() {
     const m = state.master;
@@ -1197,6 +1332,7 @@
       case "ss6-ore-export": await exportSS6_ORE(); break;
       // setting
       case "prod-export": await exportProduksi(); break;
+      case "gl-export": await exportGainLoss(); break;
       case "prod-bulan": { const d = new Date(state.prodTo || todayISO()); const p = (n) => String(n).padStart(2, "0"); const y = d.getFullYear(), mo = d.getMonth(); state.prodFrom = `${y}-${p(mo + 1)}-01`; state.prodTo = `${y}-${p(mo + 1)}-${p(new Date(y, mo + 1, 0).getDate())}`; renderProduksi(); break; }
       case "ms-add": await msAdd(el.getAttribute("data-kind")); break;
       case "ms-del": { const k = el.getAttribute("data-kind"), ix = +el.getAttribute("data-i"); confirmModal("Hapus item ini dari Data Master?", async () => { await msDel(k, ix); }); break; }
