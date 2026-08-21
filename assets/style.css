@@ -319,6 +319,16 @@ body{ background:
 .sect .table-wrap table{background:transparent;}
 
 /* Setting: grid kartu master */
+/* Data Master — form input */
+.sect-b{padding:0 16px 16px;}
+.ms-form{display:grid; gap:12px; margin:14px 0 12px;}
+.ms-form.row2{grid-template-columns:1fr 1fr;}
+@media (max-width:600px){ .ms-form.row2{grid-template-columns:1fr;} }
+.ms-sub{font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); font-weight:600; margin:4px 0 10px;}
+.chiplist{display:flex; flex-wrap:wrap; gap:8px;}
+.mchip{display:inline-flex; align-items:center; gap:6px; padding:6px 8px 6px 12px; border-radius:999px; font-size:13px; background:var(--surface-2); border:1px solid var(--border);}
+.mchip .mx{border:none; background:transparent; color:var(--faint); cursor:pointer; display:inline-flex; align-items:center; padding:2px; border-radius:50%;}
+.mchip .mx:hover{background:var(--danger-soft); color:var(--danger);}
 .ms-group{margin-bottom:22px;}
 .ms-gh{font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); font-weight:600; margin:0 2px 10px;}
 .ms-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:12px;}

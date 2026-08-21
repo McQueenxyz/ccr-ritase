@@ -19,6 +19,14 @@
   const onlyDigits = (s) => String(s == null ? "" : s).replace(/\D/g, "");
   const pengawasNrp = (nama) => { const p = pengawasList().find((x) => x.nama.toLowerCase() === String(nama || "").trim().toLowerCase()); return p ? p.nrp : (/^\d+$/.test(String(nama || "").trim()) ? String(nama).trim() : ""); };
   const pengawasNama = (nrp) => { const p = pengawasList().find((x) => x.nrp === String(nrp || "").trim()); return p ? p.nama : ""; };
+  // Kode SS6: pakai kode dari Data Master dulu (bisa diedit user), fallback ke tabel bawaan.
+  function resolveCode(type, label) {
+    const m = state.master || {};
+    const map = type === "problem" ? m.problem_codes : type === "idle" ? m.idle_codes : m.delay_codes;
+    const c = map && map[label];
+    if (c) return { code: c, desc: label };
+    return window.SS6_CODES ? window.SS6_CODES.codeFor(type, label) : { code: "", desc: "" };
+  }
   // Ketik 3-4 angka terakhir → nomor lambung penuh. Kembalikan input asli bila tak unik/tak cocok.
   function resolveLambung(input) {
     const t = String(input == null ? "" : input).trim();
@@ -747,28 +755,123 @@
   /* ---------- SETTING ---------- */
   function renderSetting() {
     const m = state.master;
-    const ed = (title, key, val) => {
-      const v = val != null ? val : (m[key] || []).join("\n");
-      const n = v.split("\n").filter((s) => s.trim()).length;
-      return `<div class="card ms-card"><div class="ms-h"><span>${esc(title)}</span><span class="chip">${n}</span></div><textarea id="set-${key}" rows="4">${esc(v)}</textarea></div>`;
-    };
-    const group = (title, cards) => `<div class="ms-group"><div class="ms-gh">${esc(title)}</div><div class="ms-grid">${cards}</div></div>`;
+    const D = window.SS6_CODES || { PDTY: {}, IDLE: {}, DELAY: {} };
+    const dl = (id, obj) => `<datalist id="${id}">${Object.keys(obj).sort().map((c) => `<option value="${esc(c)}">${esc(obj[c])}</option>`).join("")}</datalist>`;
+    const codeOf = (kind, label) => { const map = kind === "problem" ? m.problem_codes : kind === "idle" ? m.idle_codes : m.delay_codes; return (map && map[label]) || (resolveCode(kind, label).code) || ""; };
+    // daftar sederhana (chip) utk Material & Grade
+    const chips = (kind, arr) => (arr || []).length
+      ? `<div class="chiplist">${arr.map((v, i) => `<span class="mchip">${esc(v)}<button class="mx" data-act="ms-del" data-kind="${kind}" data-i="${i}" title="Hapus">${icon("close", 13)}</button></span>`).join("")}</div>`
+      : `<div class="hint">Belum ada data.</div>`;
+    // tabel berkode utk Problem / Idle / Delay
+    const codeTable = (kind, arr) => (arr || []).length
+      ? `<div class="table-wrap"><table><thead><tr><th>Nama</th><th>Kode</th><th>Aksi</th></tr></thead><tbody>${arr.map((v, i) => `<tr><td>${esc(v)}</td><td>${esc(codeOf(kind, v)) || "—"}</td><td class="actions"><button class="iconbtn" data-act="ms-del" data-kind="${kind}" data-i="${i}" title="Hapus">${icon("delete")}</button></td></tr>`).join("")}</tbody></table></div>`
+      : `<div class="hint">Belum ada data.</div>`;
+    const pg = m.pengawas || [];
     app.innerHTML = `${appbar({ crumb: "Setting" })}<div class="container">
       <div class="page-head"><div class="page-title">Data Master</div>
-        <div class="actions"><button class="btn" data-act="reset-master">Default</button><button class="btn primary" data-act="save-master">${icon("save", 18)} Simpan</button></div></div>
-      ${group("Produksi", ed("Materials", "materials") + ed("Disposals / Dump", "disposals") + ed("Grade Ore", "grades"))}
-      ${group("Loss / Kendala", ed("Problems (Prdty)", "problems") + ed("Idle", "idle") + ed("Delay", "delay"))}
-      ${group("Lokasi & Pengawas", ed("Area", "areas") + ed("PIT", "pits") + ed("GL Pit", "gl_pit") + ed("GL Road", "gl_road") + ed("GL Disposal", "gl_disposal"))}
-      ${group("Unit", ed("Loaders (Exca)", "loaders", (m.loaders || []).map((l) => l.kode).join("\n")))}
-      <div class="hint" style="margin-top:6px">Satu item per baris. Klik <b>Simpan</b> untuk menyimpan perubahan.</div>
+        <div class="actions"><button class="btn" data-act="reset-master">Kembalikan Default</button></div></div>
+
+      <div class="card sect"><div class="sect-h"><span>GL (Pengawas)</span><span class="chip">${pg.length}</span></div><div class="sect-b">
+        ${pg.length ? `<div class="table-wrap"><table><thead><tr><th>Nama Pengawas</th><th>NRP</th><th>Aksi</th></tr></thead><tbody>${pg.map((p, i) => `<tr><td>${esc(p.nama)}</td><td>${esc(p.nrp)}</td><td class="actions"><button class="iconbtn" data-act="ms-del" data-kind="pengawas" data-i="${i}" title="Hapus">${icon("delete")}</button></td></tr>`).join("")}</tbody></table></div>` : `<div class="hint">Belum ada pengawas.</div>`}
+        <div class="ms-form row2">
+          <div><label>Nama Pengawas</label><input id="f-pg-nama" placeholder="cth: Abdul Gafar" /></div>
+          <div><label>NRP</label><input id="f-pg-nrp" inputmode="numeric" placeholder="cth: 17052197" /></div>
+        </div>
+        <button class="btn primary sm" data-act="ms-add" data-kind="pengawas">${icon("add", 16)} Tambah Pengawas</button>
+      </div></div>
+
+      <div class="card sect"><div class="sect-h"><span>Material</span><span class="chip">${(m.materials || []).length}</span></div><div class="sect-b">
+        ${chips("materials", m.materials)}
+        <div class="ms-form"><div><label>Material</label><input id="f-mat" placeholder="cth: Quarry Inpit" /></div></div>
+        <button class="btn primary sm" data-act="ms-add" data-kind="materials">${icon("add", 16)} Tambah Material</button>
+      </div></div>
+
+      <div class="card sect"><div class="sect-h"><span>Problem</span><span class="chip">${(m.problems || []).length}</span></div><div class="sect-b">
+        ${codeTable("problem", m.problems)}
+        <div class="ms-form row2">
+          <div><label>Problem</label><input id="f-prb" placeholder="cth: Pindah Front" /></div>
+          <div><label>Kode</label><input id="f-prb-kode" list="dl-pdty" placeholder="cth: P27" /></div>
+        </div>
+        <button class="btn primary sm" data-act="ms-add" data-kind="problem">${icon("add", 16)} Tambah Problem</button>
+      </div></div>
+
+      <div class="card sect"><div class="sect-h"><span>Idle / Delay</span><span class="chip">${(m.idle || []).length + (m.delay || []).length}</span></div><div class="sect-b">
+        <div class="ms-sub">Idle</div>
+        ${codeTable("idle", m.idle)}
+        <div class="ms-form row2">
+          <div><label>Idle</label><input id="f-idl" placeholder="cth: Hujan" /></div>
+          <div><label>Kode</label><input id="f-idl-kode" list="dl-idle" placeholder="cth: I01" /></div>
+        </div>
+        <button class="btn primary sm" data-act="ms-add" data-kind="idle">${icon("add", 16)} Tambah Idle</button>
+        <div class="ms-sub" style="margin-top:18px">Delay</div>
+        ${codeTable("delay", m.delay)}
+        <div class="ms-form row2">
+          <div><label>Delay</label><input id="f-dly" placeholder="cth: Meal & Break" /></div>
+          <div><label>Kode</label><input id="f-dly-kode" list="dl-delay" placeholder="cth: D09" /></div>
+        </div>
+        <button class="btn primary sm" data-act="ms-add" data-kind="delay">${icon("add", 16)} Tambah Delay</button>
+      </div></div>
+
+      <div class="card sect"><div class="sect-h"><span>Grade Ore</span><span class="chip">${(m.grades || []).length}</span></div><div class="sect-b">
+        ${chips("grades", m.grades)}
+        <div class="ms-form"><div><label>Grade Ore</label><input id="f-grd" placeholder="cth: SAP3-SSP" /></div></div>
+        <button class="btn primary sm" data-act="ms-add" data-kind="grades">${icon("add", 16)} Tambah Grade</button>
+      </div></div>
+
+      <div class="card sect"><div class="sect-h"><span>Disposal / Dump</span><span class="chip">${(m.disposals || []).length}</span></div><div class="sect-b">
+        ${chips("disposals", m.disposals)}
+        <div class="ms-form"><div><label>Disposal / Dump</label><input id="f-dsp" placeholder="cth: Disposal Balado" /></div></div>
+        <button class="btn primary sm" data-act="ms-add" data-kind="disposals">${icon("add", 16)} Tambah Disposal</button>
+      </div></div>
+
+      <div class="card sect"><div class="sect-h"><span>Lokasi</span><span class="chip">${(m.areas || []).length + (m.pits || []).length}</span></div><div class="sect-b">
+        <div class="ms-sub">Area</div>${chips("areas", m.areas)}
+        <div class="ms-form"><div><label>Area</label><input id="f-area" placeholder="cth: BAHODOPI BLOCK 1" /></div></div>
+        <button class="btn primary sm" data-act="ms-add" data-kind="areas">${icon("add", 16)} Tambah Area</button>
+        <div class="ms-sub" style="margin-top:18px">PIT</div>${chips("pits", m.pits)}
+        <div class="ms-form"><div><label>PIT</label><input id="f-pit" placeholder="cth: MYARA" /></div></div>
+        <button class="btn primary sm" data-act="ms-add" data-kind="pits">${icon("add", 16)} Tambah PIT</button>
+      </div></div>
+      ${dl("dl-pdty", D.PDTY)}${dl("dl-idle", D.IDLE)}${dl("dl-delay", D.DELAY)}
     </div>`;
   }
-  async function saveMaster() {
+  const MS_SIMPLE = { materials: "f-mat", grades: "f-grd", disposals: "f-dsp", areas: "f-area", pits: "f-pit" };
+  async function msAdd(kind) {
+    const m = state.master, $ = (id) => document.getElementById(id);
+    const val = (id) => ($(id) ? $(id).value.trim() : "");
+    if (kind === "pengawas") {
+      const nama = val("f-pg-nama"), nrp = val("f-pg-nrp");
+      if (!nama || !nrp) { toast("Isi Nama Pengawas & NRP"); return; }
+      m.pengawas = m.pengawas || [];
+      if (m.pengawas.some((p) => p.nrp === nrp)) { toast("NRP sudah ada"); return; }
+      m.pengawas.push({ nrp, nama });
+    } else if (kind === "problem" || kind === "idle" || kind === "delay") {
+      const idp = kind === "problem" ? "f-prb" : kind === "idle" ? "f-idl" : "f-dly";
+      const nama = val(idp), kode = val(idp + "-kode").toUpperCase();
+      if (!nama) { toast("Isi nama " + kind); return; }
+      const listKey = kind === "problem" ? "problems" : kind;
+      m[listKey] = m[listKey] || [];
+      if (m[listKey].includes(nama)) { toast("Sudah ada"); return; }
+      m[listKey].push(nama);
+      if (kode) { const ck = kind === "problem" ? "problem_codes" : kind === "idle" ? "idle_codes" : "delay_codes"; m[ck] = m[ck] || {}; m[ck][nama] = kode; }
+    } else {
+      const v = val(MS_SIMPLE[kind]); if (!v) { toast("Isi dulu"); return; }
+      m[kind] = m[kind] || [];
+      if (m[kind].includes(v)) { toast("Sudah ada"); return; }
+      m[kind].push(v);
+    }
+    await Store.saveMaster(m); toast("Tersimpan"); renderSetting();
+  }
+  async function msDel(kind, i) {
     const m = state.master;
-    const lines = (id) => document.getElementById(id).value.split("\n").map((s) => s.trim()).filter(Boolean);
-    ["materials", "disposals", "grades", "problems", "idle", "delay", "areas", "pits", "gl_pit", "gl_road", "gl_disposal"].forEach((k) => { m[k] = lines(`set-${k}`); });
-    m.loaders = lines("set-loaders").map((k) => { const ex = (state.master.loaders || []).find((x) => x.kode === k); return ex || { kode: k, material_default: "OB", keterangan: "" }; });
-    await Store.saveMaster(m); toast("Tersimpan"); route();
+    if (kind === "pengawas") { (m.pengawas || []).splice(i, 1); }
+    else if (kind === "problem" || kind === "idle" || kind === "delay") {
+      const listKey = kind === "problem" ? "problems" : kind;
+      const gone = (m[listKey] || [])[i]; (m[listKey] || []).splice(i, 1);
+      const ck = kind === "problem" ? "problem_codes" : kind === "idle" ? "idle_codes" : "delay_codes";
+      if (gone && m[ck]) delete m[ck][gone];
+    } else { (m[kind] || []).splice(i, 1); }
+    await Store.saveMaster(m); toast("Dihapus"); renderSetting();
   }
 
   /* ---------- ACCOUNT ---------- */
@@ -838,11 +941,11 @@
           for (const x of lj) {
             if (x.remark && !remark) remark = x.remark;
             if (x.type === "problem") {
-              const c = codes.codeFor("problem", x.category);
+              const c = resolveCode("problem", x.category);
               if (!probCode) { probCode = c.code; probTime = num(x.duration); }
             } else { // idle | delay
               idleMin += num(x.duration);
-              const c = codes.codeFor(x.type, x.category);
+              const c = resolveCode(x.type, x.category);
               if (c.code) delayIdleCodes.push(c.code);
             }
           }
@@ -896,9 +999,9 @@
           if (rit <= 0 && lj.length === 0) continue;
           let delayMin = 0, idleMin = 0, delayCodes = [], idleCodes = [], probCode = "";
           for (const x of lj) {
-            if (x.type === "problem") { const c = codes.codeFor("problem", x.category); if (!probCode) probCode = c.code; }
-            else if (x.type === "idle") { idleMin += num(x.duration); const c = codes.codeFor("idle", x.category); if (c.code) idleCodes.push(c.code); }
-            else { delayMin += num(x.duration); const c = codes.codeFor("delay", x.category); if (c.code) delayCodes.push(c.code); }
+            if (x.type === "problem") { const c = resolveCode("problem", x.category); if (!probCode) probCode = c.code; }
+            else if (x.type === "idle") { idleMin += num(x.duration); const c = resolveCode("idle", x.category); if (c.code) idleCodes.push(c.code); }
+            else { delayMin += num(x.duration); const c = resolveCode("delay", x.category); if (c.code) delayCodes.push(c.code); }
           }
           const bcm = rit * bpr;
           const tonnage = Math.round(bcm * ORE_DENSITY * 100) / 100;
@@ -959,7 +1062,8 @@
       case "ss6-hpr-export": await exportSS6_HPR(); break;
       case "ss6-ore-export": await exportSS6_ORE(); break;
       // setting
-      case "save-master": await saveMaster(); break;
+      case "ms-add": await msAdd(el.getAttribute("data-kind")); break;
+      case "ms-del": { const k = el.getAttribute("data-kind"), ix = +el.getAttribute("data-i"); confirmModal("Hapus item ini dari Data Master?", async () => { await msDel(k, ix); }); break; }
       case "reset-master": confirmModal("Kembalikan data master ke default?", async () => { state.master = JSON.parse(JSON.stringify(window.SEED)); await Store.saveMaster(state.master); route(); }, "Ya, kembalikan"); break;
     }
   });
