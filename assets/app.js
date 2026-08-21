@@ -135,6 +135,7 @@
     if (h.startsWith("#/delay")) return renderDelay({ add: h.indexOf("/add") >= 0 });
     if (h.startsWith("#/produksi")) return renderProduksi();
     if (h.startsWith("#/gainloss")) return renderGainLoss();
+    if (h.startsWith("#/import")) return renderImport();
     if (h.startsWith("#/setting")) return renderSetting();
     if (h.startsWith("#/account")) return renderAccount();
     if (h.startsWith("#/form")) return renderLoaders();
@@ -232,6 +233,7 @@
       ${it("#/report", "chat", "Report")}
       ${it("#/produksi", "grid", "Laporan Produksi")}
       ${it("#/gainloss", "box", "Gain & Loss")}
+      ${it("#/import", "download", "Import Data")}
       <div class="nav-grp"><div class="nav-gh">${icon("truck", 18)}<span>Unit</span></div>
         <div class="nav-sub" data-to="#/unit">Daftar Populasi Unit</div>
         <div class="nav-sub" data-to="#/unit/add">Tambah Unit</div></div>
@@ -1021,6 +1023,166 @@
     toast("Laporan Gain & Loss diunduh");
   }
 
+  /* ---------- IMPORT DATA HPR / ORE ---------- */
+  // kode SS6 → label kategori di app (kebalikan APP_TO_CODE)
+  function labelForCode(type, code) {
+    if (!code) return "";
+    const c = String(code).split(",")[0].trim().toUpperCase();
+    const tbl = (window.SS6_CODES && window.SS6_CODES.APP_TO_CODE && window.SS6_CODES.APP_TO_CODE[type]) || {};
+    const hit = Object.keys(tbl).find((k) => tbl[k] === c);
+    if (hit) return hit;
+    const dict = type === "idle" ? (window.SS6_CODES || {}).IDLE : type === "delay" ? (window.SS6_CODES || {}).DELAY : (window.SS6_CODES || {}).PDTY;
+    return (dict && dict[c]) || c;
+  }
+  const toISO = (v) => {
+    if (v == null || v === "") return "";
+    if (v instanceof Date) { const p = (n) => String(n).padStart(2, "0"); return `${v.getFullYear()}-${p(v.getMonth() + 1)}-${p(v.getDate())}`; }
+    const s = String(v).trim();
+    let m = s.match(/^(\d{4})-(\d{2})-(\d{2})/); if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+    m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/); // M/D/YY (format SS6)
+    if (m) { let y = +m[3]; if (y < 100) y += 2000; const p = (n) => String(n).padStart(2, "0"); return `${y}-${p(+m[1])}-${p(+m[2])}`; }
+    if (typeof v === "number" && v > 20000) { const d = new Date(Date.UTC(1899, 11, 30 + v)); const p = (n) => String(n).padStart(2, "0"); return `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())}`; }
+    return "";
+  };
+  const jamKey = (v) => { const s = String(v == null ? "" : v).trim(); const m = s.match(/(\d{1,2})[:.]/) || s.match(/^(\d{1,2})$/); return m ? String(m[1]).padStart(2, "0") + ".00" : ""; };
+  const shiftOfJam = (j) => (parseInt(j, 10) >= 7 && parseInt(j, 10) <= 18 ? "1" : "2");
+
+  function parseImport(wb) {
+    const pack = { loaders: [], haulers: [], losses: [] }, lmap = {}, hmap = {}, lossSeen = {};
+    let kind = "", rows = 0, skipped = 0;
+    const norm = (s) => String(s == null ? "" : s).trim().toLowerCase();
+    for (const sname of wb.SheetNames) {
+      const ws = wb.Sheets[sname];
+      if (!ws || !ws["!ref"]) continue;
+      // Deteksi header TANPA mengonversi seluruh sheet (hemat memori pada workbook besar).
+      const rg = XLSX.utils.decode_range(ws["!ref"]);
+      const lastC = Math.min(rg.e.c, rg.s.c + 80);
+      const rowAt = (r) => { const o = []; for (let c = rg.s.c; c <= lastC; c++) { const cl = ws[XLSX.utils.encode_cell({ r, c })]; o.push(norm(cl ? (cl.w != null ? cl.w : cl.v) : "")); } return o; };
+      let hr = -1, isHPR = false, isORE = false;
+      for (let i = rg.s.r; i < Math.min(rg.s.r + 8, rg.e.r + 1); i++) {
+        const r = rowAt(i);
+        if (r.includes("id_hpr") || (r.includes("ritasi") && r.includes("loader"))) { hr = i; isHPR = true; break; }
+        if (r.includes("ritase") && (r.includes("activity") || r.includes("tonnage"))) { hr = i; isORE = true; break; }
+      }
+      if (hr < 0) continue; // sheet tak relevan → lewati tanpa konversi
+      const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: "", range: hr });
+      if (!aoa.length) continue;
+      hr = 0; // setelah range:hr, header ada di baris 0
+      const H = aoa[hr].map(norm);
+      const ix = (...names) => { for (const n of names) { const k = H.indexOf(n); if (k >= 0) return k; } return -1; };
+      const cT = ix("tanggal"), cJam = ix("jam", "time"), cLd = ix("loader"), cHl = ix("hauler"),
+        cMat = ix("material", "activity"), cDis = ix("dispo", "disposal", "dump"), cDist = ix("distance"),
+        cRit = ix("ritasi", "ritase"), cPeng = ix("pengawas"), cPit = ix("pit"), cGrade = ix("grade"),
+        cIdle = ix("idledelay", "idle"), cIdleC = ix("idledelay_code", "kode idle"), cDelay = ix("delay"), cDelayC = ix("kode delay"),
+        cPT = ix("prdty_problem_time", "pdty"), cPC = ix("prdty_problem_code", "kode pdty"), cRem = ix("remark"), cShift = ix("shift");
+      if (cT < 0 || cLd < 0 || cRit < 0) continue;
+      kind = kind ? (kind === (isHPR ? "HPR" : "ORE") ? kind : "HPR+ORE") : (isHPR ? "HPR" : "ORE");
+      for (let i = hr + 1; i < aoa.length; i++) {
+        const r = aoa[i]; if (!r || !r.length) continue;
+        const tgl = toISO(r[cT]), loader = String(r[cLd] || "").trim().toUpperCase();
+        if (!tgl || !loader) { if (String(r[cT] || "").trim()) skipped++; continue; }
+        const jam = jamKey(r[cJam]); if (!jam) { skipped++; continue; }
+        let shift = cShift >= 0 ? String(r[cShift] || "").trim() : "";
+        shift = /night|2/i.test(shift) ? "2" : /day|1/i.test(shift) ? "1" : shiftOfJam(jam);
+        const lk = tgl + "|" + shift + "|" + loader;
+        if (!lmap[lk]) {
+          lmap[lk] = true;
+          const nrp = cPeng >= 0 ? String(r[cPeng] || "").trim() : "";
+          pack.loaders.push({ _k: lk, tanggal: tgl, shift, loader, pengawas: nrp, pengawas_nama: pengawasNama(nrp), pit: String((r[cPit] || "")).replace(/^PIT\s+/i, "").trim() || "MYARA", area: "", gl_pit: pengawasNama(nrp), gl_road: "", gl_disposal: "" });
+        }
+        const hauler = String(r[cHl] || "").trim().toUpperCase();
+        const mat = String(r[cMat] || "").trim(), disp = String(r[cDis] || "").trim();
+        const rit = num(r[cRit]);
+        if (hauler && rit > 0) {
+          const hk = lk + "|" + hauler + "|" + mat + "|" + disp;
+          let h = hmap[hk];
+          if (!h) { h = hmap[hk] = { _lk: lk, hauler, material: mat, disposal: disp, distance: cDist >= 0 ? num(r[cDist]) : 0, grade: cGrade >= 0 ? String(r[cGrade] || "").trim() : "", rit: {} }; pack.haulers.push(h); }
+          h.rit[jam] = (h.rit[jam] || 0) + rit;
+        }
+        // losses — 1x per (loader,jam) walau baris berulang
+        const remark = cRem >= 0 ? String(r[cRem] || "").trim() : "";
+        const addLoss = (type, dur, code) => {
+          if (!(dur > 0)) return;
+          const key = lk + "|" + jam + "|" + type + "|" + (code || "");
+          if (lossSeen[key]) return; lossSeen[key] = 1;
+          pack.losses.push({ _lk: lk, jam, type, category: labelForCode(type, code) || (type === "problem" ? "Problem" : type === "idle" ? "Idle" : "Delay"), duration: dur, remark, auto: false });
+        };
+        if (isHPR) {
+          const mnt = cIdle >= 0 ? num(r[cIdle]) : 0, code = cIdleC >= 0 ? String(r[cIdleC] || "").trim() : "";
+          if (mnt > 0) addLoss(/^I/i.test(code) ? "idle" : "delay", mnt, code);
+          if (cPT >= 0 && num(r[cPT]) > 0) addLoss("problem", num(r[cPT]), cPC >= 0 ? String(r[cPC] || "").trim() : "");
+        } else {
+          if (cDelay >= 0 && num(r[cDelay]) > 0) addLoss("delay", num(r[cDelay]), cDelayC >= 0 ? String(r[cDelayC] || "").trim() : "");
+          if (cIdle >= 0 && num(r[cIdle]) > 0) addLoss("idle", num(r[cIdle]), cIdleC >= 0 ? String(r[cIdleC] || "").trim() : "");
+          if (cPT >= 0 && num(r[cPT]) > 0) addLoss("problem", num(r[cPT]), cPC >= 0 ? String(r[cPC] || "").trim() : "");
+        }
+        rows++;
+      }
+    }
+    const tgls = pack.loaders.map((l) => l.tanggal).sort();
+    return { pack, kind: kind || "?", rows, skipped, from: tgls[0] || "", to: tgls[tgls.length - 1] || "" };
+  }
+
+  function renderImport() {
+    app.innerHTML = `${appbar({ crumb: "Import Data" })}<div class="container">
+      <div class="page-title">Import Data HPR / ORE</div>
+      <div class="card sect"><div class="sect-h"><span>Pilih File</span></div><div class="sect-b">
+        <div class="hint" style="margin:12px 0">Pilih file Excel hasil export SS6 (<b>.xlsx</b> / <b>.xlsb</b>). Format <b>HPR</b> (OB/Quarry) dan <b>ORE</b> dikenali otomatis — boleh satu file berisi keduanya.</div>
+        <input type="file" id="imp-file" accept=".xlsx,.xlsb,.xls,.csv" />
+        <div id="imp-out" style="margin-top:14px"></div>
+      </div></div>
+      <div class="card sect"><div class="sect-h"><span>Hapus Semua Data</span></div><div class="sect-b">
+        <div class="hint" style="margin:12px 0">Menghapus <b>seluruh</b> data ritase, fleet, dan loss ${Store.mode === "supabase" ? "di database" : "di browser ini"}. Data Master (pengawas, material, kode) tidak ikut terhapus. <b>Tidak bisa dibatalkan.</b></div>
+        <button class="btn danger" data-act="wipe-all">${icon("delete", 18)} Hapus Semua Data Ritase</button>
+      </div></div>
+    </div>`;
+    const out = document.getElementById("imp-out");
+    document.getElementById("imp-file").onchange = (e) => {
+      const f = e.target.files && e.target.files[0]; if (!f) return;
+      if (!window.XLSX) { out.innerHTML = `<div class="login-err">Library Excel belum termuat.</div>`; return; }
+      out.innerHTML = `<div class="hint">Membaca ${esc(f.name)}…</div>`;
+      const rd = new FileReader();
+      rd.onload = (ev) => {
+        try {
+          const data = new Uint8Array(ev.target.result);
+          // Baca daftar sheet dulu (ringan), lalu HANYA parse sheet yang relevan —
+          // workbook besar (25 sheet) bisa menghabiskan memori kalau diparse semua.
+          let wb;
+          const meta = XLSX.read(data, { type: "array", bookSheets: true });
+          const names = meta.SheetNames || [];
+          const pref = names.filter((n) => /^(hpr|ore|upload)\b/i.test(String(n).trim()));
+          if (pref.length) wb = XLSX.read(data, { type: "array", cellDates: true, sheets: pref });
+          else if (names.length > 6) {
+            wb = { SheetNames: [], Sheets: {} }; // sheet demi sheet agar memori aman
+            for (const n of names) {
+              const one = XLSX.read(data, { type: "array", cellDates: true, sheets: [n] });
+              const ws = one.Sheets[n];
+              if (ws && ws["!ref"]) { wb.SheetNames.push(n); wb.Sheets[n] = ws; }
+            }
+          } else wb = XLSX.read(data, { type: "array", cellDates: true });
+          const res = parseImport(wb);
+          if (!res.pack.loaders.length) { out.innerHTML = `<div class="login-err">Tidak ada baris yang bisa dibaca. Pastikan file berisi sheet HPR/ORE hasil export SS6.</div>`; return; }
+          state.__imp = res;
+          out.innerHTML = `<div class="card" style="margin-top:6px">
+            <div style="font-weight:600;margin-bottom:10px">Siap diimpor — ${esc(res.kind)}</div>
+            <div class="meta" style="display:flex;flex-wrap:wrap;gap:8px 14px">
+              <span class="chip">${fmtNum(res.rows)} baris terbaca</span>
+              <span class="chip ok">${fmtNum(res.pack.loaders.length)} loader-shift</span>
+              <span class="chip">${fmtNum(res.pack.haulers.length)} fleet</span>
+              <span class="chip loss">${fmtNum(res.pack.losses.length)} loss</span>
+              ${res.skipped ? `<span class="chip wait">${fmtNum(res.skipped)} baris dilewati</span>` : ""}
+            </div>
+            <div class="hint">Periode: <b>${esc(fmtID(res.from))}</b> s/d <b>${esc(fmtID(res.to))}</b></div>
+            <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+              <button class="btn primary" data-act="imp-go">${icon("save", 18)} Impor Sekarang</button>
+              <button class="btn" data-act="imp-cancel">Batal</button>
+            </div></div>`;
+        } catch (err) { out.innerHTML = `<div class="login-err">Gagal membaca file: ${esc(err.message)}</div>`; }
+      };
+      rd.readAsArrayBuffer(f);
+    };
+  }
+
   /* ---------- SETTING ---------- */
   function renderSetting() {
     const m = state.master;
@@ -1333,6 +1495,18 @@
       // setting
       case "prod-export": await exportProduksi(); break;
       case "gl-export": await exportGainLoss(); break;
+      case "imp-cancel": state.__imp = null; renderImport(); break;
+      case "imp-go": {
+        const res = state.__imp; if (!res) break;
+        el.disabled = true; el.textContent = "Mengimpor…";
+        try {
+          const n = await Store.importBulk(res.pack); state.__imp = null;
+          toast("Impor selesai: " + n.loaders + " loader, " + n.haulers + " fleet, " + n.losses + " loss");
+          state.tanggal = res.from || state.tanggal; state.prodFrom = res.from; state.prodTo = res.to;
+          location.hash = "#/produksi";
+        } catch (e) { toast("Gagal impor: " + e.message); el.disabled = false; el.textContent = "Impor Sekarang"; }
+        break; }
+      case "wipe-all": confirmModal("HAPUS SEMUA data ritase, fleet, dan loss? Tindakan ini tidak bisa dibatalkan.", async () => { const n = await Store.clearAll(); toast("Semua data dihapus (" + n + " loader)"); renderImport(); }, "Ya, hapus semua"); break;
       case "prod-bulan": { const d = new Date(state.prodTo || todayISO()); const p = (n) => String(n).padStart(2, "0"); const y = d.getFullYear(), mo = d.getMonth(); state.prodFrom = `${y}-${p(mo + 1)}-01`; state.prodTo = `${y}-${p(mo + 1)}-${p(new Date(y, mo + 1, 0).getDate())}`; renderProduksi(); break; }
       case "ms-add": await msAdd(el.getAttribute("data-kind")); break;
       case "ms-del": { const k = el.getAttribute("data-kind"), ix = +el.getAttribute("data-i"); confirmModal("Hapus item ini dari Data Master?", async () => { await msDel(k, ix); }); break; }

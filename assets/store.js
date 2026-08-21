@@ -112,6 +112,22 @@
       const ids = new Set(loaders.map((l) => l.id));
       return { loaders, haulers: db.haulers.filter((h) => ids.has(h.loader_id)), losses: db.losses.filter((x) => ids.has(x.loader_id)) };
     },
+    // Hapus SEMUA data ritase (master & sesi tetap).
+    async clearAll() {
+      const db = this._load();
+      const n = db.loaders.length; db.loaders = []; db.haulers = []; db.losses = [];
+      this._save(db); return n;
+    },
+    // Import massal hasil parsing file. Struktur: {loaders:[{_k,...}], haulers:[{_lk,...}], losses:[{_lk,...}]}
+    async importBulk(pack) {
+      const db = this._load();
+      const idOf = {};
+      pack.loaders.forEach((l) => { const row = { id: uid(), created_at: Date.now(), ...l }; delete row._k; idOf[l._k] = row.id; db.loaders.push(row); });
+      pack.haulers.forEach((h) => { const lid = idOf[h._lk]; if (!lid) return; const row = { id: uid(), loader_id: lid, created_at: Date.now(), ...h }; delete row._lk; db.haulers.push(row); });
+      pack.losses.forEach((x) => { const lid = idOf[x._lk]; if (!lid) return; const row = { id: uid(), loader_id: lid, created_at: Date.now(), ...x }; delete row._lk; db.losses.push(row); });
+      this._save(db);
+      return { loaders: pack.loaders.length, haulers: pack.haulers.length, losses: pack.losses.length };
+    },
   };
 
   /* ================= SUPABASE ADAPTER ================= */
@@ -185,6 +201,34 @@
         losses = (await this.sb.from("losses").select("*").in("loader_id", ids)).data || [];
       }
       return { loaders, haulers, losses };
+    },
+    async clearAll() {
+      const { count } = await this.sb.from("loaders").select("*", { count: "exact", head: true });
+      await this.sb.from("losses").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      await this.sb.from("haulers").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      await this.sb.from("loaders").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      return count || 0;
+    },
+    async importBulk(pack) {
+      const idOf = {};
+      // loaders (batch 500)
+      for (let i = 0; i < pack.loaders.length; i += 500) {
+        const chunk = pack.loaders.slice(i, i + 500);
+        const rows = chunk.map((l) => { const r = { ...l }; delete r._k; return r; });
+        const { data, error } = await this.sb.from("loaders").insert(rows).select("id");
+        if (error) throw new Error(error.message);
+        (data || []).forEach((row, k) => { idOf[chunk[k]._k] = row.id; });
+      }
+      const push = async (table, arr) => {
+        const rows = arr.map((o) => { const lid = idOf[o._lk]; if (!lid) return null; const r = { loader_id: lid, ...o }; delete r._lk; return r; }).filter(Boolean);
+        for (let i = 0; i < rows.length; i += 500) {
+          const { error } = await this.sb.from(table).insert(rows.slice(i, i + 500));
+          if (error) throw new Error(error.message);
+        }
+      };
+      await push("haulers", pack.haulers);
+      await push("losses", pack.losses);
+      return { loaders: pack.loaders.length, haulers: pack.haulers.length, losses: pack.losses.length };
     },
   };
 
