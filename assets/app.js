@@ -133,6 +133,7 @@
     if (h.startsWith("#/report")) return renderReport();
     if (h.startsWith("#/unit")) return renderUnit({ add: h.indexOf("/add") >= 0 });
     if (h.startsWith("#/delay")) return renderDelay({ add: h.indexOf("/add") >= 0 });
+    if (h.startsWith("#/produksi")) return renderProduksi();
     if (h.startsWith("#/setting")) return renderSetting();
     if (h.startsWith("#/account")) return renderAccount();
     if (h.startsWith("#/form")) return renderLoaders();
@@ -228,6 +229,7 @@
       ${it("#/", "grid", "Dashboard")}
       ${it("#/form", "mineral", "Form Ritase")}
       ${it("#/report", "chat", "Report")}
+      ${it("#/produksi", "grid", "Laporan Produksi")}
       <div class="nav-grp"><div class="nav-gh">${icon("truck", 18)}<span>Unit</span></div>
         <div class="nav-sub" data-to="#/unit">Daftar Populasi Unit</div>
         <div class="nav-sub" data-to="#/unit/add">Tambah Unit</div></div>
@@ -752,6 +754,55 @@
     return L.join("\n");
   }
 
+  /* ---------- LAPORAN PRODUKSI (rentang tanggal) ---------- */
+  async function renderProduksi() {
+    if (!state.prodFrom) { state.prodFrom = state.tanggal; state.prodTo = state.tanggal; state.prodShift = ""; }
+    const { loaders, haulers, losses } = await Store.listRange(state.prodFrom, state.prodTo, state.prodShift);
+    const byId = {}; loaders.forEach((l) => (byId[l.id] = l));
+    let totRit = 0, totBcm = 0, totLoss = 0;
+    const perTgl = {}, perMat = {}, perLoader = {};
+    haulers.forEach((h) => {
+      const l = byId[h.loader_id]; if (!l) return;
+      const f = bcmPerRit(l.loader, h.material);
+      const r = Object.values(h.rit || {}).reduce((a, b) => a + num(b), 0);
+      const b = r * f; totRit += r; totBcm += b;
+      const t = perTgl[l.tanggal] = perTgl[l.tanggal] || { rit: 0, bcm: 0, loss: 0 }; t.rit += r; t.bcm += b;
+      const mm = normMat(h.material); const pm = perMat[mm] = perMat[mm] || { rit: 0, bcm: 0 }; pm.rit += r; pm.bcm += b;
+      const pl = perLoader[l.loader] = perLoader[l.loader] || { rit: 0, bcm: 0 }; pl.rit += r; pl.bcm += b;
+    });
+    losses.forEach((x) => { const l = byId[x.loader_id]; if (!l) return; const d = num(x.duration); totLoss += d; if (perTgl[l.tanggal]) perTgl[l.tanggal].loss += d; });
+    const tgls = Object.keys(perTgl).sort();
+    const rowsTgl = tgls.length ? tgls.map((t) => `<tr><td>${esc(fmtID(t))}</td><td class="num">${fmtNum(perTgl[t].rit)}</td><td class="num">${fmtNum(Math.round(perTgl[t].bcm))}</td><td class="num">${fmtNum(perTgl[t].loss)}'</td></tr>`).join("")
+      : `<tr><td colspan="4" class="empty">Tidak ada data pada rentang ini.</td></tr>`;
+    const rowsMat = Object.keys(perMat).sort().map((k) => `<tr><td>${esc(k)}</td><td class="num">${fmtNum(perMat[k].rit)}</td><td class="num">${fmtNum(Math.round(perMat[k].bcm))}</td></tr>`).join("") || `<tr><td colspan="3" class="empty">—</td></tr>`;
+    const rowsLd = Object.keys(perLoader).sort().map((k) => `<tr><td>${esc(k)}</td><td class="num">${fmtNum(perLoader[k].rit)}</td><td class="num">${fmtNum(Math.round(perLoader[k].bcm))}</td></tr>`).join("") || `<tr><td colspan="3" class="empty">—</td></tr>`;
+    const shiftOpts = `<option value="">Semua shift</option>` + state.master.shifts.map((s) => `<option value="${s.kode}" ${s.kode === state.prodShift ? "selected" : ""}>${esc(s.label)}</option>`).join("");
+    app.innerHTML = `${appbar({ crumb: "Laporan Produksi" })}<div class="container">
+      <div class="page-title">Laporan Produksi</div>
+      <div class="toolbar">
+        <div><label>Dari tanggal</label><input type="date" id="p-from" value="${state.prodFrom}"></div>
+        <div><label>Sampai tanggal</label><input type="date" id="p-to" value="${state.prodTo}"></div>
+        <div class="grow"><label>Shift</label><select id="p-shift">${shiftOpts}</select></div>
+        <button class="btn" data-act="prod-bulan">Bulan ini</button>
+      </div>
+      <div class="dstats">
+        <div class="dcard"><span class="dic blue">${icon("truck", 20)}</span><div><div class="n">${fmtNum(totRit)}</div><div class="t">Total Ritase</div></div></div>
+        <div class="dcard"><span class="dic green">${icon("box", 20)}</span><div><div class="n">${fmtNum(Math.round(totBcm))}</div><div class="t">Total BCM</div></div></div>
+        <div class="dcard"><span class="dic amber">${icon("clock", 20)}</span><div><div class="n">${fmtNum(totLoss)}<span class="ns">'</span></div><div class="t">Total Loss</div></div></div>
+      </div>
+      <div class="card sect"><div class="sect-h"><span>Per Tanggal</span><span class="chip">${tgls.length} hari</span></div><div class="sect-b">
+        <div class="table-wrap"><table><thead><tr><th>Tanggal</th><th class="num">Ritase</th><th class="num">BCM</th><th class="num">Loss</th></tr></thead><tbody>${rowsTgl}</tbody></table></div></div></div>
+      <div class="card sect"><div class="sect-h"><span>Per Material</span></div><div class="sect-b">
+        <div class="table-wrap"><table><thead><tr><th>Material</th><th class="num">Ritase</th><th class="num">BCM</th></tr></thead><tbody>${rowsMat}</tbody></table></div></div></div>
+      <div class="card sect"><div class="sect-h"><span>Per Loader</span></div><div class="sect-b">
+        <div class="table-wrap"><table><thead><tr><th>Loader</th><th class="num">Ritase</th><th class="num">BCM</th></tr></thead><tbody>${rowsLd}</tbody></table></div></div></div>
+      <div class="hint">Sumber data: ${Store.mode === "supabase" ? "database online (Supabase)" : "penyimpanan lokal browser ini"}.</div>
+    </div>`;
+    document.getElementById("p-from").onchange = (e) => { state.prodFrom = e.target.value; renderProduksi(); };
+    document.getElementById("p-to").onchange = (e) => { state.prodTo = e.target.value; renderProduksi(); };
+    document.getElementById("p-shift").onchange = (e) => { state.prodShift = e.target.value; renderProduksi(); };
+  }
+
   /* ---------- SETTING ---------- */
   function renderSetting() {
     const m = state.master;
@@ -1062,6 +1113,7 @@
       case "ss6-hpr-export": await exportSS6_HPR(); break;
       case "ss6-ore-export": await exportSS6_ORE(); break;
       // setting
+      case "prod-bulan": { const d = new Date(state.prodTo || todayISO()); const p = (n) => String(n).padStart(2, "0"); const y = d.getFullYear(), mo = d.getMonth(); state.prodFrom = `${y}-${p(mo + 1)}-01`; state.prodTo = `${y}-${p(mo + 1)}-${p(new Date(y, mo + 1, 0).getDate())}`; renderProduksi(); break; }
       case "ms-add": await msAdd(el.getAttribute("data-kind")); break;
       case "ms-del": { const k = el.getAttribute("data-kind"), ix = +el.getAttribute("data-i"); confirmModal("Hapus item ini dari Data Master?", async () => { await msDel(k, ix); }); break; }
       case "reset-master": confirmModal("Kembalikan data master ke default?", async () => { state.master = JSON.parse(JSON.stringify(window.SEED)); await Store.saveMaster(state.master); route(); }, "Ya, kembalikan"); break;

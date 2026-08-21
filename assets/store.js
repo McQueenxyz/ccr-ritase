@@ -105,6 +105,13 @@
       const ids = new Set(loaders.map((l) => l.id));
       return { loaders, haulers: db.haulers.filter((h) => ids.has(h.loader_id)), losses: db.losses.filter((x) => ids.has(x.loader_id)) };
     },
+    // Rentang tanggal (untuk Laporan Produksi). shift "" = semua shift.
+    async listRange(dari, sampai, shift) {
+      const db = this._load();
+      const loaders = db.loaders.filter((l) => l.tanggal >= dari && l.tanggal <= sampai && (!shift || String(l.shift) === String(shift)));
+      const ids = new Set(loaders.map((l) => l.id));
+      return { loaders, haulers: db.haulers.filter((h) => ids.has(h.loader_id)), losses: db.losses.filter((x) => ids.has(x.loader_id)) };
+    },
   };
 
   /* ================= SUPABASE ADAPTER ================= */
@@ -158,6 +165,20 @@
     async listAll(tanggal, shift) {
       const loaders = await this.listLoaders(tanggal, shift);
       const ids = loaders.map((l) => l.id);
+      let haulers = [], losses = [];
+      if (ids.length) {
+        haulers = (await this.sb.from("haulers").select("*").in("loader_id", ids)).data || [];
+        losses = (await this.sb.from("losses").select("*").in("loader_id", ids)).data || [];
+      }
+      return { loaders, haulers, losses };
+    },
+    // Rentang tanggal (untuk Laporan Produksi). shift "" = semua shift.
+    async listRange(dari, sampai, shift) {
+      let qy = this.sb.from("loaders").select("*").gte("tanggal", dari).lte("tanggal", sampai);
+      if (shift) qy = qy.eq("shift", String(shift));
+      const { data, error } = await qy.order("tanggal").order("loader");
+      if (error) throw new Error(error.message);
+      const loaders = data || [], ids = loaders.map((l) => l.id);
       let haulers = [], losses = [];
       if (ids.length) {
         haulers = (await this.sb.from("haulers").select("*").in("loader_id", ids)).data || [];
