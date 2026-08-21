@@ -755,12 +755,13 @@
   }
 
   /* ---------- LAPORAN PRODUKSI (rentang tanggal) ---------- */
-  async function renderProduksi() {
+  // Perhitungan dipakai bersama oleh tampilan & export → angka selalu identik.
+  async function produksiData() {
     if (!state.prodFrom) { state.prodFrom = state.tanggal; state.prodTo = state.tanggal; state.prodShift = ""; }
     const { loaders, haulers, losses } = await Store.listRange(state.prodFrom, state.prodTo, state.prodShift);
     const byId = {}; loaders.forEach((l) => (byId[l.id] = l));
     let totRit = 0, totBcm = 0, totLoss = 0;
-    const perTgl = {}, perMat = {}, perLoader = {};
+    const perTgl = {}, perMat = {}, perLoader = {}, detail = [];
     haulers.forEach((h) => {
       const l = byId[h.loader_id]; if (!l) return;
       const f = bcmPerRit(l.loader, h.material);
@@ -769,8 +770,20 @@
       const t = perTgl[l.tanggal] = perTgl[l.tanggal] || { rit: 0, bcm: 0, loss: 0 }; t.rit += r; t.bcm += b;
       const mm = normMat(h.material); const pm = perMat[mm] = perMat[mm] || { rit: 0, bcm: 0 }; pm.rit += r; pm.bcm += b;
       const pl = perLoader[l.loader] = perLoader[l.loader] || { rit: 0, bcm: 0 }; pl.rit += r; pl.bcm += b;
+      Object.keys(h.rit || {}).sort().forEach((j) => {
+        const rr = num(h.rit[j]); if (rr <= 0) return;
+        detail.push([l.tanggal, "Shift " + l.shift, j, l.loader, h.hauler, mm, h.disposal || "", num(h.distance), rr, rr * f, pengawasNama(l.pengawas) || l.pengawas_nama || "", l.pengawas || ""]);
+      });
     });
     losses.forEach((x) => { const l = byId[x.loader_id]; if (!l) return; const d = num(x.duration); totLoss += d; if (perTgl[l.tanggal]) perTgl[l.tanggal].loss += d; });
+    const lossRows = losses.map((x) => { const l = byId[x.loader_id] || {}; return [l.tanggal || "", "Shift " + (l.shift || ""), x.jam, l.loader || "", (x.type || "").toUpperCase(), x.category || "", num(x.duration), resolveCode(x.type, x.category).code || "", x.remark || ""]; })
+      .sort((a, b) => (a[0] + a[2]).localeCompare(b[0] + b[2]));
+    return { loaders, haulers, losses, totRit, totBcm, totLoss, perTgl, perMat, perLoader, detail, lossRows };
+  }
+
+  async function renderProduksi() {
+    const D = await produksiData();
+    const { totRit, totBcm, totLoss, perTgl, perMat, perLoader } = D;
     const tgls = Object.keys(perTgl).sort();
     const rowsTgl = tgls.length ? tgls.map((t) => `<tr><td>${esc(fmtID(t))}</td><td class="num">${fmtNum(perTgl[t].rit)}</td><td class="num">${fmtNum(Math.round(perTgl[t].bcm))}</td><td class="num">${fmtNum(perTgl[t].loss)}'</td></tr>`).join("")
       : `<tr><td colspan="4" class="empty">Tidak ada data pada rentang ini.</td></tr>`;
@@ -784,6 +797,7 @@
         <div><label>Sampai tanggal</label><input type="date" id="p-to" value="${state.prodTo}"></div>
         <div class="grow"><label>Shift</label><select id="p-shift">${shiftOpts}</select></div>
         <button class="btn" data-act="prod-bulan">Bulan ini</button>
+        <button class="btn primary" data-act="prod-export">${icon("download", 18)} Export Excel</button>
       </div>
       <div class="dstats">
         <div class="dcard"><span class="dic blue">${icon("truck", 20)}</span><div><div class="n">${fmtNum(totRit)}</div><div class="t">Total Ritase</div></div></div>
@@ -801,6 +815,52 @@
     document.getElementById("p-from").onchange = (e) => { state.prodFrom = e.target.value; renderProduksi(); };
     document.getElementById("p-to").onchange = (e) => { state.prodTo = e.target.value; renderProduksi(); };
     document.getElementById("p-shift").onchange = (e) => { state.prodShift = e.target.value; renderProduksi(); };
+  }
+
+  /* Export Laporan Produksi → 1 file Excel, 5 sheet. */
+  async function exportProduksi() {
+    if (!window.XLSX) { toast("Library Excel belum termuat"); return; }
+    const D = await produksiData();
+    if (!D.loaders.length) { toast("Tidak ada data pada rentang ini"); return; }
+    const R = (n) => Math.round(n * 100) / 100;
+    const shiftLbl = state.prodShift ? "Shift " + state.prodShift : "Semua shift";
+    const wb = XLSX.utils.book_new();
+    const add = (nama, aoa) => XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aoa), nama);
+
+    add("Ringkasan", [
+      ["LAPORAN PRODUKSI — CCR"], [CFG.COMPANY], [],
+      ["Periode", fmtID(state.prodFrom) + " s/d " + fmtID(state.prodTo)],
+      ["Shift", shiftLbl],
+      ["Dibuat oleh", (state.user && state.user.nama) || ""],
+      ["Dibuat pada", new Date().toLocaleString("id-ID")], [],
+      ["Total Ritase", D.totRit],
+      ["Total BCM", R(D.totBcm)],
+      ["Total Loss (menit)", D.totLoss],
+      ["Jumlah hari", Object.keys(D.perTgl).length],
+      ["Jumlah loader", D.loaders.length],
+    ]);
+
+    const tgls = Object.keys(D.perTgl).sort();
+    add("Per Tanggal", [["Tanggal", "Ritase", "BCM", "Loss (menit)"]]
+      .concat(tgls.map((t) => [t, D.perTgl[t].rit, R(D.perTgl[t].bcm), D.perTgl[t].loss]))
+      .concat([["TOTAL", D.totRit, R(D.totBcm), D.totLoss]]));
+
+    add("Per Material", [["Material", "Ritase", "BCM"]]
+      .concat(Object.keys(D.perMat).sort().map((k) => [k, D.perMat[k].rit, R(D.perMat[k].bcm)]))
+      .concat([["TOTAL", D.totRit, R(D.totBcm)]]));
+
+    add("Per Loader", [["Loader", "Ritase", "BCM"]]
+      .concat(Object.keys(D.perLoader).sort().map((k) => [k, D.perLoader[k].rit, R(D.perLoader[k].bcm)]))
+      .concat([["TOTAL", D.totRit, R(D.totBcm)]]));
+
+    add("Detail Ritase", [["Tanggal", "Shift", "Jam", "Loader", "Hauler", "Material", "Disposal", "Jarak (m)", "Ritase", "BCM", "Pengawas", "NRP"]]
+      .concat(D.detail.map((r) => r.slice(0, 9).concat([R(r[9]), r[10], r[11]]))));
+
+    add("Detail Loss", [["Tanggal", "Shift", "Jam", "Loader", "Tipe", "Kategori", "Durasi (menit)", "Kode SS6", "Remark"]]
+      .concat(D.lossRows));
+
+    XLSX.writeFile(wb, `Laporan_Produksi_${state.prodFrom}_sd_${state.prodTo}.xlsx`);
+    toast("Laporan diunduh");
   }
 
   /* ---------- SETTING ---------- */
@@ -1113,6 +1173,7 @@
       case "ss6-hpr-export": await exportSS6_HPR(); break;
       case "ss6-ore-export": await exportSS6_ORE(); break;
       // setting
+      case "prod-export": await exportProduksi(); break;
       case "prod-bulan": { const d = new Date(state.prodTo || todayISO()); const p = (n) => String(n).padStart(2, "0"); const y = d.getFullYear(), mo = d.getMonth(); state.prodFrom = `${y}-${p(mo + 1)}-01`; state.prodTo = `${y}-${p(mo + 1)}-${p(new Date(y, mo + 1, 0).getDate())}`; renderProduksi(); break; }
       case "ms-add": await msAdd(el.getAttribute("data-kind")); break;
       case "ms-del": { const k = el.getAttribute("data-kind"), ix = +el.getAttribute("data-i"); confirmModal("Hapus item ini dari Data Master?", async () => { await msDel(k, ix); }); break; }
