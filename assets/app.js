@@ -775,16 +775,30 @@
         detail.push([l.tanggal, "Shift " + l.shift, j, l.loader, h.hauler, mm, h.disposal || "", num(h.distance), rr, rr * f, pengawasNama(l.pengawas) || l.pengawas_nama || "", l.pengawas || ""]);
       });
     });
-    losses.forEach((x) => { const l = byId[x.loader_id]; if (!l) return; const d = num(x.duration); totLoss += d; if (perTgl[l.tanggal]) perTgl[l.tanggal].loss += d; });
+    const perLossCat = {};
+    losses.forEach((x) => {
+      const l = byId[x.loader_id]; if (!l) return;
+      const d = num(x.duration); totLoss += d;
+      if (perTgl[l.tanggal]) perTgl[l.tanggal].loss += d;
+      const key = (x.type || "") + "|" + (x.category || "-");
+      const c = perLossCat[key] = perLossCat[key] || { type: x.type, cat: x.category || "-", menit: 0, n: 0, kode: resolveCode(x.type, x.category).code || "" };
+      c.menit += d; c.n += 1;
+    });
     const lossRows = losses.map((x) => { const l = byId[x.loader_id] || {}; return [l.tanggal || "", "Shift " + (l.shift || ""), x.jam, l.loader || "", (x.type || "").toUpperCase(), x.category || "", num(x.duration), resolveCode(x.type, x.category).code || "", x.remark || ""]; })
       .sort((a, b) => (a[0] + a[2]).localeCompare(b[0] + b[2]));
-    return { loaders, haulers, losses, totRit, totBcm, totLoss, perTgl, perMat, perLoader, detail, lossRows };
+    return { loaders, haulers, losses, totRit, totBcm, totLoss, perTgl, perMat, perLoader, perLossCat, detail, lossRows };
   }
 
   async function renderProduksi() {
     const D = await produksiData();
-    const { totRit, totBcm, totLoss, perTgl, perMat, perLoader } = D;
+    const { totRit, totBcm, totLoss, perTgl, perMat, perLoader, perLossCat, lossRows } = D;
     const tgls = Object.keys(perTgl).sort();
+    const tipeChip = (t) => `<span class="chip ${t === "problem" ? "" : t === "idle" ? "wait" : "loss"}">${esc((t || "").toUpperCase())}</span>`;
+    const cats = Object.keys(perLossCat).map((k) => perLossCat[k]).sort((a, b) => b.menit - a.menit);
+    const rowsCat = cats.length ? cats.map((c) => `<tr><td>${esc(c.cat)}</td><td>${tipeChip(c.type)}</td><td>${esc(c.kode) || "—"}</td><td class="num">${fmtNum(c.n)}×</td><td class="num">${fmtNum(c.menit)}'</td></tr>`).join("")
+      : `<tr><td colspan="5" class="empty">Tidak ada loss pada rentang ini.</td></tr>`;
+    const rowsLoss = lossRows.length ? lossRows.map((r) => `<tr><td>${esc(fmtID(r[0]))}</td><td>${esc(r[2])}</td><td>${esc(r[3])}</td><td>${tipeChip((r[4] || "").toLowerCase())}</td><td>${esc(r[5])}</td><td class="num">${fmtNum(r[6])}'</td><td>${esc(r[8]) || "—"}</td></tr>`).join("")
+      : `<tr><td colspan="7" class="empty">Tidak ada loss pada rentang ini.</td></tr>`;
     const rowsTgl = tgls.length ? tgls.map((t) => `<tr><td>${esc(fmtID(t))}</td><td class="num">${fmtNum(perTgl[t].rit)}</td><td class="num">${fmtNum(Math.round(perTgl[t].bcm))}</td><td class="num">${fmtNum(perTgl[t].loss)}'</td></tr>`).join("")
       : `<tr><td colspan="4" class="empty">Tidak ada data pada rentang ini.</td></tr>`;
     const rowsMat = Object.keys(perMat).sort().map((k) => `<tr><td>${esc(k)}</td><td class="num">${fmtNum(perMat[k].rit)}</td><td class="num">${fmtNum(Math.round(perMat[k].bcm))}</td></tr>`).join("") || `<tr><td colspan="3" class="empty">—</td></tr>`;
@@ -810,6 +824,10 @@
         <div class="table-wrap"><table><thead><tr><th>Material</th><th class="num">Ritase</th><th class="num">BCM</th></tr></thead><tbody>${rowsMat}</tbody></table></div></div></div>
       <div class="card sect"><div class="sect-h"><span>Per Loader</span></div><div class="sect-b">
         <div class="table-wrap"><table><thead><tr><th>Loader</th><th class="num">Ritase</th><th class="num">BCM</th></tr></thead><tbody>${rowsLd}</tbody></table></div></div></div>
+      <div class="card sect"><div class="sect-h"><span>Rekap Loss per Keterangan</span><span class="chip">${cats.length}</span></div><div class="sect-b">
+        <div class="table-wrap"><table class="sortable"><thead><tr><th class="sortable">Keterangan ${sortChev}</th><th>Tipe</th><th>Kode</th><th class="sortable num" data-num="1">Kejadian ${sortChev}</th><th class="sortable num" data-num="1">Total ${sortChev}</th></tr></thead><tbody>${rowsCat}</tbody></table></div></div></div>
+      <div class="card sect"><div class="sect-h"><span>Detail Loss</span><span class="chip">${lossRows.length}</span></div><div class="sect-b">
+        <div class="table-wrap"><table class="sortable"><thead><tr><th class="sortable">Tanggal ${sortChev}</th><th class="sortable">Jam ${sortChev}</th><th class="sortable">Loader ${sortChev}</th><th>Tipe</th><th class="sortable">Keterangan ${sortChev}</th><th class="sortable num" data-num="1">Durasi ${sortChev}</th><th>Remark</th></tr></thead><tbody>${rowsLoss}</tbody></table></div></div></div>
       <div class="hint">Sumber data: ${Store.mode === "supabase" ? "database online (Supabase)" : "penyimpanan lokal browser ini"}.</div>
     </div>`;
     document.getElementById("p-from").onchange = (e) => { state.prodFrom = e.target.value; renderProduksi(); };
@@ -856,7 +874,12 @@
     add("Detail Ritase", [["Tanggal", "Shift", "Jam", "Loader", "Hauler", "Material", "Disposal", "Jarak (m)", "Ritase", "BCM", "Pengawas", "NRP"]]
       .concat(D.detail.map((r) => r.slice(0, 9).concat([R(r[9]), r[10], r[11]]))));
 
-    add("Detail Loss", [["Tanggal", "Shift", "Jam", "Loader", "Tipe", "Kategori", "Durasi (menit)", "Kode SS6", "Remark"]]
+    const cats = Object.keys(D.perLossCat).map((k) => D.perLossCat[k]).sort((a, b) => b.menit - a.menit);
+    add("Rekap Loss", [["Keterangan", "Tipe", "Kode SS6", "Kejadian", "Total (menit)"]]
+      .concat(cats.map((c) => [c.cat, (c.type || "").toUpperCase(), c.kode, c.n, c.menit]))
+      .concat([["TOTAL", "", "", cats.reduce((a, c) => a + c.n, 0), D.totLoss]]));
+
+    add("Detail Loss", [["Tanggal", "Shift", "Jam", "Loader", "Tipe", "Keterangan", "Durasi (menit)", "Kode SS6", "Remark"]]
       .concat(D.lossRows));
 
     XLSX.writeFile(wb, `Laporan_Produksi_${state.prodFrom}_sd_${state.prodTo}.xlsx`);
