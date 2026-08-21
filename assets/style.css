@@ -319,6 +319,14 @@ body{ background:
 .sect .table-wrap table{background:transparent;}
 
 /* Setting: grid kartu master */
+/* Klasifikasi material */
+tbody tr.cls-sub td{color:var(--muted); font-size:13px;}
+tbody tr.cls-sub td:first-child{padding-left:30px;}
+tbody tr.cls-sub td:first-child::before{content:"└ "; color:var(--faint);}
+tbody tr.cls-main td{border-top:1px solid var(--border);}
+tbody tr:first-child.cls-main td{border-top:none;}
+tfoot td{padding:13px 14px; border-top:2px solid var(--border-2); font-size:14px;}
+
 /* Gain & Loss (waterfall) */
 .gl-up{color:#1a8f3c;} .gl-dn{color:var(--danger);}
 [data-theme="dark"] .gl-up{color:#30d158;}

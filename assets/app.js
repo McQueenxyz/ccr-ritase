@@ -758,6 +758,18 @@
     return L.join("\n");
   }
 
+  /* Klasifikasi material untuk pelaporan. Quarry = gabungan Quarry/Inpit/Infra. */
+  const CLASS_ORDER = ["ORE_GETTING", "ORE_HAULING", "OB", "QUARRY", "OTHER"];
+  const CLASS_LABEL = { ORE_GETTING: "Ore Getting", ORE_HAULING: "Ore Hauling", OB: "Overburden", QUARRY: "Quarry (total)", OTHER: "Material Lainnya" };
+  function matClass(m) {
+    const s = String(m || "").trim();
+    if (/ore\s*haul/i.test(s)) return "ORE_HAULING";
+    if (/ore\s*getting/i.test(s)) return "ORE_GETTING";
+    if (/quarry/i.test(s)) return "QUARRY";
+    if (/^ob\b|overburden/i.test(s)) return "OB";
+    return "OTHER";
+  }
+
   /* ---------- LAPORAN PRODUKSI (rentang tanggal) ---------- */
   // Perhitungan dipakai bersama oleh tampilan & export → angka selalu identik.
   async function produksiData() {
@@ -765,7 +777,7 @@
     const { loaders, haulers, losses } = await Store.listRange(state.prodFrom, state.prodTo, state.prodShift);
     const byId = {}; loaders.forEach((l) => (byId[l.id] = l));
     let totRit = 0, totBcm = 0, totLoss = 0;
-    const perTgl = {}, perMat = {}, perLoader = {}, detail = [];
+    const perTgl = {}, perMat = {}, perLoader = {}, perClass = {}, detail = [];
     haulers.forEach((h) => {
       const l = byId[h.loader_id]; if (!l) return;
       const f = bcmPerRit(l.loader, h.material);
@@ -773,6 +785,10 @@
       const b = r * f; totRit += r; totBcm += b;
       const t = perTgl[l.tanggal] = perTgl[l.tanggal] || { rit: 0, bcm: 0, loss: 0 }; t.rit += r; t.bcm += b;
       const mm = normMat(h.material); const pm = perMat[mm] = perMat[mm] || { rit: 0, bcm: 0 }; pm.rit += r; pm.bcm += b;
+      const ck = matClass(h.material);
+      const pc = perClass[ck] = perClass[ck] || { key: ck, label: CLASS_LABEL[ck], rit: 0, bcm: 0, sub: {} };
+      pc.rit += r; pc.bcm += b;
+      const sb = pc.sub[mm] = pc.sub[mm] || { rit: 0, bcm: 0 }; sb.rit += r; sb.bcm += b;
       const pl = perLoader[l.loader] = perLoader[l.loader] || { rit: 0, bcm: 0 }; pl.rit += r; pl.bcm += b;
       Object.keys(h.rit || {}).sort().forEach((j) => {
         const rr = num(h.rit[j]); if (rr <= 0) return;
@@ -790,13 +806,21 @@
     });
     const lossRows = losses.map((x) => { const l = byId[x.loader_id] || {}; return [l.tanggal || "", "Shift " + (l.shift || ""), x.jam, l.loader || "", (x.type || "").toUpperCase(), x.category || "", num(x.duration), resolveCode(x.type, x.category).code || "", x.remark || ""]; })
       .sort((a, b) => (a[0] + a[2]).localeCompare(b[0] + b[2]));
-    return { loaders, haulers, losses, totRit, totBcm, totLoss, perTgl, perMat, perLoader, perLossCat, detail, lossRows };
+    return { loaders, haulers, losses, totRit, totBcm, totLoss, perTgl, perMat, perLoader, perClass, perLossCat, detail, lossRows };
   }
 
   async function renderProduksi() {
     const D = await produksiData();
-    const { totRit, totBcm, totLoss, perTgl, perMat, perLoader, perLossCat, lossRows } = D;
+    const { totRit, totBcm, totLoss, perTgl, perMat, perLoader, perClass, perLossCat, lossRows } = D;
     const tgls = Object.keys(perTgl).sort();
+    const clsRows = CLASS_ORDER.filter((k) => perClass[k]).map((k) => {
+      const c = perClass[k];
+      const subs = Object.keys(c.sub).sort();
+      const showSub = subs.length > 1;
+      const pct = totBcm > 0 ? (c.bcm / totBcm) * 100 : 0;
+      return `<tr class="cls-main"><td><b>${esc(c.label)}</b></td><td class="num">${fmtNum(c.rit)}</td><td class="num"><b>${fmtNum(Math.round(c.bcm))}</b></td><td class="num">${pct.toFixed(1)}%</td></tr>`
+        + (showSub ? subs.map((s) => `<tr class="cls-sub"><td>${esc(s)}</td><td class="num">${fmtNum(c.sub[s].rit)}</td><td class="num">${fmtNum(Math.round(c.sub[s].bcm))}</td><td></td></tr>`).join("") : "");
+    }).join("") || `<tr><td colspan="4" class="empty">Tidak ada data pada rentang ini.</td></tr>`;
     const tipeChip = (t) => `<span class="chip ${t === "problem" ? "" : t === "idle" ? "wait" : "loss"}">${esc((t || "").toUpperCase())}</span>`;
     const cats = Object.keys(perLossCat).map((k) => perLossCat[k]).sort((a, b) => b.menit - a.menit);
     const rowsCat = cats.length ? cats.map((c) => `<tr><td>${esc(c.cat)}</td><td>${tipeChip(c.type)}</td><td>${esc(c.kode) || "—"}</td><td class="num">${fmtNum(c.n)}×</td><td class="num">${fmtNum(c.menit)}'</td></tr>`).join("")
@@ -824,7 +848,10 @@
       </div>
       <div class="card sect"><div class="sect-h"><span>Per Tanggal</span><span class="chip">${tgls.length} hari</span></div><div class="sect-b">
         <div class="table-wrap"><table><thead><tr><th>Tanggal</th><th class="num">Ritase</th><th class="num">BCM</th><th class="num">Loss</th></tr></thead><tbody>${rowsTgl}</tbody></table></div></div></div>
-      <div class="card sect"><div class="sect-h"><span>Per Material</span></div><div class="sect-b">
+      <div class="card sect"><div class="sect-h"><span>Klasifikasi Material</span><span class="chip">${fmtNum(Math.round(totBcm))} BCM</span></div><div class="sect-b">
+        <div class="table-wrap"><table><thead><tr><th>Klasifikasi</th><th class="num">Ritase</th><th class="num">BCM</th><th class="num">% BCM</th></tr></thead><tbody>${clsRows}</tbody>
+        <tfoot><tr><td><b>TOTAL</b></td><td class="num"><b>${fmtNum(totRit)}</b></td><td class="num"><b>${fmtNum(Math.round(totBcm))}</b></td><td class="num"><b>100%</b></td></tr></tfoot></table></div></div></div>
+      <div class="card sect"><div class="sect-h"><span>Per Material (rinci)</span></div><div class="sect-b">
         <div class="table-wrap"><table><thead><tr><th>Material</th><th class="num">Ritase</th><th class="num">BCM</th></tr></thead><tbody>${rowsMat}</tbody></table></div></div></div>
       <div class="card sect"><div class="sect-h"><span>Per Loader</span></div><div class="sect-b">
         <div class="table-wrap"><table><thead><tr><th>Loader</th><th class="num">Ritase</th><th class="num">BCM</th></tr></thead><tbody>${rowsLd}</tbody></table></div></div></div>
@@ -866,6 +893,15 @@
     add("Per Tanggal", [["Tanggal", "Ritase", "BCM", "Loss (menit)"]]
       .concat(tgls.map((t) => [t, D.perTgl[t].rit, R(D.perTgl[t].bcm), D.perTgl[t].loss]))
       .concat([["TOTAL", D.totRit, R(D.totBcm), D.totLoss]]));
+
+    const clsAoa = [["Klasifikasi", "Material", "Ritase", "BCM", "% BCM"]];
+    CLASS_ORDER.filter((k) => D.perClass[k]).forEach((k) => {
+      const c = D.perClass[k];
+      clsAoa.push([c.label, "", c.rit, R(c.bcm), D.totBcm > 0 ? R((c.bcm / D.totBcm) * 100) : 0]);
+      Object.keys(c.sub).sort().forEach((s) => clsAoa.push(["", s, c.sub[s].rit, R(c.sub[s].bcm), ""]));
+    });
+    clsAoa.push(["TOTAL", "", D.totRit, R(D.totBcm), 100]);
+    add("Klasifikasi Material", clsAoa);
 
     add("Per Material", [["Material", "Ritase", "BCM"]]
       .concat(Object.keys(D.perMat).sort().map((k) => [k, D.perMat[k].rit, R(D.perMat[k].bcm)]))
