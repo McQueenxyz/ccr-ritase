@@ -146,7 +146,7 @@
   function renderLogin() {
     const hint = Store.mode === "supabase" ? "Login memakai akun Supabase." : "Mode lokal — password default: admin";
     app.innerHTML = `<div class="login-wrap"><div class="login-box">
-      <div class="login-logo"><img src="assets/logo.png" alt="CCR" /></div>
+      <div class="login-logo"><img src="assets/logo.svg" alt="CCR" /></div>
       <h1 class="login-title">Masuk dengan<br>Akun CCR</h1>
       <div id="acct-badge" class="acct-badge hidden"></div>
       <form id="login-form" autocomplete="off" novalidate>
@@ -1681,7 +1681,7 @@
     const f = document.createElement("footer"); f.className = "site-footer";
     f.innerHTML = `
       <div class="foot-top">
-        <span class="foot-logo"><img src="assets/logo.png" alt="CCR"></span>
+        <span class="foot-logo"><img src="assets/logo.svg" alt="CCR"></span>
         <p class="foot-desc">CCR — aplikasi pencatatan ritase &amp; laporan produksi per jam untuk PT Antareja Mahada Makmur. Input ritase per loader, hitung loss otomatis, buat laporan WhatsApp, dan export ke format SS6 (HPR &amp; ORE) secara cepat, rapi, dan konsisten.</p>
       </div>
       <div class="foot-div"></div>
