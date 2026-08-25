@@ -231,7 +231,6 @@
     return `
       ${it("#/", "grid", "Dashboard")}
       ${it("#/form", "mineral", "Form Ritase")}
-      ${it("#/report", "chat", "Report")}
       ${it("#/produksi", "grid", "Laporan Produksi")}
       ${it("#/gainloss", "box", "Gain & Loss")}
       ${it("#/import", "download", "Import Data")}
