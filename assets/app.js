@@ -527,20 +527,41 @@
     const l = await Store.getLoader(loaderId);
     if (!l) { toast("Loader tak ditemukan"); location.hash = "#/form"; return; }
     app._loaderId = loaderId;
+    // samakan konteks agar Report & grid memakai tanggal/shift loader ini
+    state.tanggal = l.tanggal; state.shift = String(l.shift);
     const haulers = await Store.listHaulers(loaderId);
     const losses = await Store.listLosses(loaderId);
-    const tab = state.detailTab;
-    const tabBtn = (key, label) => `<button class="btn sm ${tab === key ? "primary" : ""}" data-act="tab" data-tab="${key}">${label}</button>`;
-    let section = "";
-    if (tab === "fleet") section = fleetSection(l, haulers);
-    else if (tab === "ritase") section = ritaseSection(l, haulers);
-    else section = lossSection(l, losses);
+    // Satu halaman: Fleet → Ritase → Loss → Report
+    const jams = jamListFor(l.shift);
+    const njRaw = String(new Date().getHours()).padStart(2, "0") + ".00";
+    const nowJam = (l.tanggal === todayISO() && jams.includes(njRaw)) ? njRaw : "";
+    const jamOpts = `<option value="">— Semua jam (rekap shift) —</option>` + jams.map((j) => `<option value="${j}" ${j === nowJam ? "selected" : ""}>${j}</option>`).join("");
+    const sec = (n, title, chip, body) => `<div class="card sect ld-sec" id="sec-${n}"><div class="sect-h"><span><span class="secno">${n}</span>${title}</span>${chip || ""}</div><div class="sect-b">${body}</div></div>`;
+    const totRit = haulers.reduce((a, h) => a + Object.values(h.rit || {}).reduce((x, y) => x + num(y), 0), 0);
+    const totLoss = losses.reduce((a, x) => a + num(x.duration), 0);
     app.innerHTML = `${appbar({ back: true, menu: true, crumb: `${l.loader}` })}<div class="container">
-      <div class="page-title">${esc(l.loader)} <span class="hint">PIT ${esc(l.pit)} · GL ${esc(l.gl_pit)}/${esc(l.gl_road)}/${esc(l.gl_disposal)} · Shift ${esc(l.shift)}</span></div>
-      <div class="actions" style="margin-bottom:14px">${tabBtn("fleet", "1. Fleet (Hauler)")}${tabBtn("ritase", "2. Ritase")}${tabBtn("loss", "3. Loss")}</div>
-      <div id="detail-body">${section}</div>
+      <div class="page-title">${esc(l.loader)} <span class="hint">PIT ${esc(l.pit)} · GL ${esc(l.gl_pit || "-")} · Shift ${esc(l.shift)} · ${esc(fmtID(l.tanggal))}</span></div>
+      <div class="ld-jump">
+        <a href="#sec-1">Fleet</a><a href="#sec-2">Ritase</a><a href="#sec-3">Loss</a><a href="#sec-4">Report</a>
+      </div>
+      ${sec(1, "Fleet (Hauler)", `<span class="chip">${haulers.length}</span>`, fleetSection(l, haulers))}
+      ${sec(2, "Ritase", `<span class="chip ok">${totRit} rit</span>`, ritaseSection(l, haulers))}
+      ${sec(3, "Loss", `<span class="chip ${totLoss ? "loss" : ""}">${totLoss}'</span>`, lossSection(l, losses))}
+      ${sec(4, "Report", "", `
+        <div class="toolbar" style="margin-bottom:12px">
+          <div class="grow"><label>Jam</label><select id="d-rjam">${jamOpts}</select></div>
+          <button class="btn primary" data-act="d-gen-report">Buat Laporan</button>
+        </div>
+        <div style="margin-bottom:10px"><label>Keterangan Tambahan <span class="hint">(opsional)</span></label>
+          <textarea id="r-ket" rows="2" placeholder="cth: 5 Operator Izin, 2 Operator Sakit"></textarea></div>
+        <div class="report-box" id="report-out">Pilih jam lalu klik <b>Buat Laporan</b>.</div>
+        <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap">
+          <button class="btn primary btn-ic" data-act="wa-report">${icon("whatsapp", 18)} Salin &amp; buka WhatsApp</button>
+          <button class="btn btn-ic" data-act="copy-report">${icon("copy", 18)} Salin saja</button>
+        </div>
+        <div class="hint">Laporan mencakup <b>semua loader</b> pada ${esc(fmtID(l.tanggal))} shift ${esc(l.shift)}.</div>`)}
     </div>`;
-    if (tab === "ritase") bindGrid(loaderId);
+    bindGrid(loaderId);
   }
 
   /* --- Tab 1: FLEET --- */
@@ -630,7 +651,8 @@
   }
   function bindGrid(loaderId) {
     recalcGrid();
-    const body = document.getElementById("detail-body");
+    const body = document.getElementById("sec-2") || document.getElementById("detail-body");
+    if (!body) return;
     body.addEventListener("input", (e) => { if (e.target.classList.contains("grid-in")) recalcGrid(); });
     body.addEventListener("change", async (e) => { if (e.target.classList.contains("grid-in")) { await Store.setRit(e.target.dataset.hid, e.target.dataset.jam, e.target.value); flashSaved(); } });
   }
@@ -1561,7 +1583,12 @@
       case "add-delay": delayModal(); break;
       case "del-unit": { const kind = el.getAttribute("data-kind"), uid2 = el.getAttribute("data-id"); confirmModal(`Hapus unit ${uid2}?`, async () => { const m = state.master; if (kind === "dt") m.haulers_master = (m.haulers_master || []).filter((u) => u.lambung !== uid2); else m.loaders = (m.loaders || []).filter((l) => l.kode !== uid2); await Store.saveMaster(m); toast("Unit dihapus"); renderUnit(); }); break; }
       case "del-delay": { const di = +el.getAttribute("data-i"); confirmModal("Hapus delay ini?", async () => { const m = state.master; const d = (m.delay_extra || [])[di]; (m.delay_extra || []).splice(di, 1); if (d) m.delay = (m.delay || []).filter((x) => x !== d.desc); await Store.saveMaster(m); toast("Delay dihapus"); renderDelay(); }); break; }
-      case "tab": state.detailTab = el.getAttribute("data-tab"); renderLoaderDetail(LID); break;
+      case "tab": { const t = el.getAttribute("data-tab"); const n = t === "fleet" ? 1 : t === "ritase" ? 2 : 3; const s = document.getElementById("sec-" + n); if (s) s.scrollIntoView({ behavior: "smooth", block: "start" }); break; }
+      case "d-gen-report": {
+        const jam = document.getElementById("d-rjam").value;
+        const out = document.getElementById("report-out"); out.textContent = "Membuat...";
+        const txt = await buildReport(jam); out.textContent = txt; out._txt = txt; out.classList.add("wa");
+        break; }
       // loader
       case "add-loader": loaderModal(null); break;
       case "edit-loader": loaderModal(await Store.getLoader(id)); break;

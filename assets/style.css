@@ -320,6 +320,16 @@ body{ background:
 .sect .table-wrap table{background:transparent;}
 
 /* Setting: grid kartu master */
+/* Form Ritase — 1 halaman (Fleet / Ritase / Loss / Report) */
+.ld-sec{margin-bottom:16px; scroll-margin-top:70px;}
+.ld-sec .sect-h{font-size:15px;}
+.secno{display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; margin-right:9px;
+  border-radius:50%; background:var(--primary); color:#fff; font-size:12px; font-weight:600; vertical-align:-3px;}
+.ld-jump{display:flex; gap:8px; flex-wrap:wrap; margin:0 0 16px;}
+.ld-jump a{padding:7px 14px; border-radius:999px; border:1px solid var(--border); background:var(--surface);
+  font-size:13px; font-weight:550; color:var(--muted); text-decoration:none; transition:.16s var(--ease);}
+.ld-jump a:hover{color:var(--primary); border-color:var(--primary); background:var(--accent-soft);}
+
 /* Klasifikasi material */
 tbody tr.cls-sub td{color:var(--muted); font-size:13px;}
 tbody tr.cls-sub td:first-child{padding-left:30px;}
