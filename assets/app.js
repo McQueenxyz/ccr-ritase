@@ -1583,7 +1583,7 @@
       case "add-delay": delayModal(); break;
       case "del-unit": { const kind = el.getAttribute("data-kind"), uid2 = el.getAttribute("data-id"); confirmModal(`Hapus unit ${uid2}?`, async () => { const m = state.master; if (kind === "dt") m.haulers_master = (m.haulers_master || []).filter((u) => u.lambung !== uid2); else m.loaders = (m.loaders || []).filter((l) => l.kode !== uid2); await Store.saveMaster(m); toast("Unit dihapus"); renderUnit(); }); break; }
       case "del-delay": { const di = +el.getAttribute("data-i"); confirmModal("Hapus delay ini?", async () => { const m = state.master; const d = (m.delay_extra || [])[di]; (m.delay_extra || []).splice(di, 1); if (d) m.delay = (m.delay || []).filter((x) => x !== d.desc); await Store.saveMaster(m); toast("Delay dihapus"); renderDelay(); }); break; }
-      case "tab": { const t = el.getAttribute("data-tab"); const n = t === "fleet" ? 1 : t === "ritase" ? 2 : 3; const s = document.getElementById("sec-" + n); if (s) s.scrollIntoView({ behavior: "smooth", block: "start" }); break; }
+      case "tab": { const t = el.getAttribute("data-tab"); const n = t === "fleet" ? 1 : t === "ritase" ? 2 : 3; const s = document.getElementById("sec-" + n); if (s && typeof s.scrollIntoView === "function") { try { s.scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) { s.scrollIntoView(); } } break; }
       case "d-gen-report": {
         const jam = document.getElementById("d-rjam").value;
         const out = document.getElementById("report-out"); out.textContent = "Membuat...";
