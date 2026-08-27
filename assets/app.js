@@ -118,7 +118,7 @@
       document.body.appendChild(el);
       el.addEventListener("click", (e) => {
         const lo = e.target.closest('[data-act="logout"]');
-        if (lo) { confirmModal("Keluar dari akun CCR?", async () => { await Store.signOut(); state.user = null; state.master = null; renderLogin(); }, "Ya, keluar"); return; }
+        if (lo) { confirmModal("Keluar dari akun CCR?", async () => { await Store.signOut(); state.user = null; state.master = null; closeDrawer(); route(); }, "Ya, keluar"); return; }
         const nav = e.target.closest("[data-to]");
         if (nav && nav.getAttribute("data-to")) { const to = nav.getAttribute("data-to"); if ((location.hash || "#/") === to) route(); else location.hash = to; }
       });
@@ -310,7 +310,7 @@
     d.onclick = (e) => {
       if (e.target === d || e.target.closest('[data-act="drawer-close"]')) return closeDrawer();
       const lo = e.target.closest('[data-act="logout"]');
-      if (lo) { closeDrawer(); confirmModal("Keluar dari akun CCR?", async () => { await Store.signOut(); state.user = null; state.master = null; renderLogin(); }, "Ya, keluar"); return; }
+      if (lo) { closeDrawer(); confirmModal("Keluar dari akun CCR?", async () => { await Store.signOut(); state.user = null; state.master = null; closeDrawer(); route(); }, "Ya, keluar"); return; }
       const nav = e.target.closest("[data-to]");
       if (nav && nav.getAttribute("data-to")) { const to = nav.getAttribute("data-to"); closeDrawer(); if ((location.hash || "#/") === to) route(); else location.hash = to; }
     };
@@ -1640,7 +1640,7 @@
       case "go-menu": location.hash = "#/"; break;
       case "drawer": openDrawer(); break;
       case "nav": location.hash = el.getAttribute("data-to"); break;
-      case "logout": confirmModal("Keluar dari akun CCR?", async () => { await Store.signOut(); state.user = null; state.master = null; renderLogin(); }, "Ya, keluar"); break;
+      case "logout": confirmModal("Keluar dari akun CCR?", async () => { await Store.signOut(); state.user = null; state.master = null; closeDrawer(); route(); }, "Ya, keluar"); break;
       case "add-unit": unitModal(); break;
       case "add-delay": delayModal(); break;
       case "del-unit": { const kind = el.getAttribute("data-kind"), uid2 = el.getAttribute("data-id"); confirmModal(`Hapus unit ${uid2}?`, async () => { const m = state.master; if (kind === "dt") m.haulers_master = (m.haulers_master || []).filter((u) => u.lambung !== uid2); else m.loaders = (m.loaders || []).filter((l) => l.kode !== uid2); await Store.saveMaster(m); toast("Unit dihapus"); renderUnit(); }); break; }
