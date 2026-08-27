@@ -393,6 +393,51 @@ tr.foot td.sticky-col{z-index:3;}
 .wf-v{text-align:right; font-weight:500; font-size:13.5px;}
 @media (max-width:600px){.wf-row{grid-template-columns:92px 1fr 76px; gap:8px;}}
 
+/* ---------------- Dropzone unggah file ---------------- */
+.dropzone{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
+  padding:40px 24px; border:1.5px dashed var(--border-2); border-radius:var(--radius); cursor:pointer;
+  background:var(--surface-2); text-align:center; transition:border-color .15s var(--ease), background .15s var(--ease), transform .15s var(--ease);}
+.dropzone:hover{border-color:var(--primary); background:var(--surface-3);}
+.dropzone.over{border-color:var(--primary); border-style:solid; background:var(--surface-3); transform:scale(1.005);}
+.dropzone input[type="file"]{position:absolute; width:1px; height:1px; opacity:0; pointer-events:none;}
+.dz-ic{width:52px; height:52px; border-radius:var(--pill); background:var(--primary); color:var(--primary-fg);
+  display:inline-flex; align-items:center; justify-content:center; margin-bottom:4px; transition:transform .15s var(--ease);}
+.dropzone:hover .dz-ic,.dropzone.over .dz-ic{transform:translateY(-2px);}
+.dz-t{font-size:15px; font-weight:600; letter-spacing:-.01em;}
+.dz-d{font-size:13px; color:var(--muted);}
+.dz-d b{color:var(--text); font-weight:500;}
+
+/* Kartu file terpilih */
+.filecard{display:flex; align-items:center; gap:12px; padding:14px 16px; border-radius:var(--radius-sm);
+  background:var(--surface); box-shadow:var(--shadow);}
+.fc-ic{flex:none; width:38px; height:38px; border-radius:var(--radius-xs); background:var(--surface-2); color:var(--text);
+  display:inline-flex; align-items:center; justify-content:center;}
+.fc-t{flex:1; min-width:0; display:flex; flex-direction:column;}
+.fc-t b{font-size:14px; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.fc-t i{font-style:normal; font-size:12.5px; color:var(--muted);}
+.fc-x{flex:none; width:30px; height:30px; border-radius:var(--radius-xs); border:none; background:transparent; color:var(--faint);
+  cursor:pointer; display:inline-flex; align-items:center; justify-content:center;}
+.fc-x:hover{background:var(--danger-soft); color:var(--danger);}
+.fc-load{display:flex; align-items:center; gap:8px; margin-top:12px; font-size:13px; color:var(--muted);}
+.fc-body{margin-top:14px;}
+.fc-chips{display:flex; flex-wrap:wrap; gap:7px; margin-bottom:8px;}
+.fc-act{display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;}
+
+/* Pemberitahuan di halaman */
+.notif{display:flex; align-items:flex-start; gap:12px; padding:14px 16px; margin-bottom:16px; border-radius:var(--radius);
+  background:var(--surface); box-shadow:var(--shadow); animation:notifIn .22s var(--ease);}
+@keyframes notifIn{from{opacity:0; transform:translateY(-6px);} to{opacity:1; transform:none;}}
+.notif .nf-ic{flex:none; width:32px; height:32px; border-radius:var(--pill); display:inline-flex; align-items:center; justify-content:center;
+  background:var(--surface-2); color:var(--text);}
+.notif.ok .nf-ic{background:var(--success-soft); color:var(--success);}
+.notif.err .nf-ic{background:var(--danger-soft); color:var(--danger);}
+.notif .nf-t{flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;}
+.notif .nf-t b{font-size:14px; font-weight:600;}
+.notif .nf-t i{font-style:normal; font-size:13.5px; color:var(--muted);}
+.notif .nf-x{flex:none; width:28px; height:28px; border-radius:var(--radius-xs); border:none; background:transparent;
+  color:var(--faint); cursor:pointer; display:inline-flex; align-items:center; justify-content:center;}
+.notif .nf-x:hover{background:var(--surface-2); color:var(--text);}
+
 /* ---------------- Data Master ---------------- */
 .ms-form{display:grid; gap:12px; margin:14px 0 12px;}
 .ms-form.row2{grid-template-columns:1fr 1fr;}

@@ -67,6 +67,9 @@
     rocket: '<path d="M15.59 14.37a6 6 0 0 1-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 0 0 6.16-12.12A14.98 14.98 0 0 0 9.63 8.41m5.96 5.96a14.9 14.9 0 0 1-5.84 2.58m-.12-8.54a6 6 0 0 0-7.38 5.84h4.8m2.58-5.84a14.93 14.93 0 0 0-2.58 5.84m2.7 2.7c-.1.02-.21.04-.31.06a15.1 15.1 0 0 1-2.45-2.45 14.9 14.9 0 0 1 .06-.31m-2.24 2.39a4.49 4.49 0 0 0-1.76 4.3 4.49 4.49 0 0 0 4.31-1.75M16.5 9a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z"/>',
     grid: '<path d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z"/>',
     calendar: '<path d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"/>',
+    upload: '<path d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 7.5 12 3m0 0L7.5 7.5M12 3v13.5"/>',
+    sheet: '<path d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/>',
+    check: '<path d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>',
     chevL: '<path d="M15.75 19.5 8.25 12l7.5-7.5"/>',
     chevR: '<path d="m8.25 4.5 7.5 7.5-7.5 7.5"/>',
     box: '<path d="m21 7.5-9-5.25L3 7.5m18 0-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9"/>',
@@ -1304,10 +1307,15 @@
   function renderImport() {
     app.innerHTML = `${appbar({ crumb: "Import Data" })}<div class="container">
       ${pageHead("Import Data", "Masukkan data actual dari file Excel export SS6 (format HPR dan ORE).")}
-      <div class="card sect"><div class="sect-h"><span>Pilih File</span></div><div class="sect-b">
-        <div class="hint" style="margin:12px 0">Pilih file Excel hasil export SS6 (<b>.xlsx</b> / <b>.xlsb</b>). Format <b>HPR</b> (OB/Quarry) dan <b>ORE</b> dikenali otomatis — boleh satu file berisi keduanya.</div>
-        <input type="file" id="imp-file" accept=".xlsx,.xlsb,.xls,.csv" />
-        <div id="imp-out" style="margin-top:14px"></div>
+      <div id="imp-note"></div>
+      <div class="card sect"><div class="sect-h"><div><span class="sect-title">Pilih File</span><div class="sect-desc">Format HPR (OB/Quarry) dan ORE dikenali otomatis — boleh satu file berisi keduanya.</div></div></div><div class="sect-b">
+        <label class="dropzone" id="imp-zone" for="imp-file">
+          <input type="file" id="imp-file" accept=".xlsx,.xlsb,.xls,.csv" />
+          <span class="dz-ic">${icon("upload", 22)}</span>
+          <span class="dz-t">Seret file ke sini</span>
+          <span class="dz-d">atau <b>klik untuk memilih</b> · .xlsx &nbsp;.xlsb &nbsp;.csv</span>
+        </label>
+        <div id="imp-out"></div>
       </div></div>
       <div class="card sect"><div class="sect-h"><span>Hapus Semua Data</span></div><div class="sect-b">
         <div class="hint" style="margin:12px 0">Menghapus <b>seluruh</b> data ritase, fleet, dan loss ${Store.mode === "supabase" ? "di database" : "di browser ini"}. Data Master (pengawas, material, kode) tidak ikut terhapus. <b>Tidak bisa dibatalkan.</b></div>
@@ -1315,10 +1323,35 @@
       </div></div>
     </div>`;
     const out = document.getElementById("imp-out");
-    document.getElementById("imp-file").onchange = (e) => {
-      const f = e.target.files && e.target.files[0]; if (!f) return;
-      if (!window.XLSX) { out.innerHTML = `<div class="login-err">Library Excel belum termuat.</div>`; return; }
-      out.innerHTML = `<div class="hint">Membaca ${esc(f.name)}…</div>`;
+    const zone = document.getElementById("imp-zone");
+    const fileInput = document.getElementById("imp-file");
+
+    // Drag & drop
+    ["dragenter", "dragover"].forEach((ev) => zone.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); zone.classList.add("over"); }));
+    ["dragleave", "drop"].forEach((ev) => zone.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); if (ev === "dragleave" && zone.contains(e.relatedTarget)) return; zone.classList.remove("over"); }));
+    zone.addEventListener("drop", (e) => { const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (f) bacaFile(f); });
+
+    const kb = (n) => (n < 1024 ? n + " B" : n < 1048576 ? (n / 1024).toFixed(0) + " KB" : (n / 1048576).toFixed(1) + " MB");
+    const kartuFile = (f, isi) => `<div class="filecard">
+        <span class="fc-ic">${icon("sheet", 20)}</span>
+        <span class="fc-t"><b>${esc(f.name)}</b><i>${kb(f.size)}</i></span>
+        <button class="fc-x" data-act="imp-cancel" title="Hapus file">${icon("close", 16)}</button>
+      </div>${isi || ""}`;
+
+    function bacaFile(f) {
+      if (!f) return;
+      if (!/\.(xlsx|xlsb|xls|csv)$/i.test(f.name)) {
+        notif("err", "Format tidak didukung", "Pilih file .xlsx, .xlsb, .xls, atau .csv.");
+        return;
+      }
+      if (!window.XLSX) { notif("err", "Library Excel belum termuat", "Muat ulang halaman lalu coba lagi."); return; }
+      zone.classList.add("hidden");
+      out.innerHTML = kartuFile(f, `<div class="fc-load">${icon("clock", 15)} Membaca file…</div>`);
+      prosesFile(f);
+    }
+    fileInput.onchange = (e) => { const f = e.target.files && e.target.files[0]; if (f) bacaFile(f); };
+
+    function prosesFile(f) {
       const rd = new FileReader();
       rd.onload = (ev) => {
         try {
@@ -1339,26 +1372,48 @@
             }
           } else wb = XLSX.read(data, { type: "array", cellDates: true });
           const res = parseImport(wb);
-          if (!res.pack.loaders.length) { out.innerHTML = `<div class="login-err">Tidak ada baris yang bisa dibaca. Pastikan file berisi sheet HPR/ORE hasil export SS6.</div>`; return; }
+          if (!res.pack.loaders.length) {
+            out.innerHTML = kartuFile(f, "");
+            notif("err", "Tidak ada data yang bisa dibaca", "Pastikan file berisi sheet HPR atau ORE hasil export SS6.");
+            return;
+          }
           state.__imp = res;
-          out.innerHTML = `<div class="card" style="margin-top:6px">
-            <div style="font-weight:600;margin-bottom:10px">Siap diimpor — ${esc(res.kind)}</div>
-            <div class="meta" style="display:flex;flex-wrap:wrap;gap:8px 14px">
-              <span class="chip">${fmtNum(res.rows)} baris terbaca</span>
-              <span class="chip ok">${fmtNum(res.pack.loaders.length)} loader-shift</span>
-              <span class="chip">${fmtNum(res.pack.haulers.length)} fleet</span>
-              <span class="chip loss">${fmtNum(res.pack.losses.length)} loss</span>
-              ${res.skipped ? `<span class="chip wait">${fmtNum(res.skipped)} baris dilewati</span>` : ""}
-            </div>
-            <div class="hint">Periode: <b>${esc(fmtID(res.from))}</b> s/d <b>${esc(fmtID(res.to))}</b></div>
-            <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
-              <button class="btn primary" data-act="imp-go">${icon("save", 18)} Impor Sekarang</button>
-              <button class="btn" data-act="imp-cancel">Batal</button>
-            </div></div>`;
-        } catch (err) { out.innerHTML = `<div class="login-err">Gagal membaca file: ${esc(err.message)}</div>`; }
+          out.innerHTML = kartuFile(f, `
+            <div class="fc-body">
+              <div class="fc-chips">
+                <span class="chip">${esc(res.kind)}</span>
+                <span class="chip">${fmtNum(res.rows)} baris</span>
+                <span class="chip ok">${fmtNum(res.pack.loaders.length)} loader-shift</span>
+                <span class="chip">${fmtNum(res.pack.haulers.length)} fleet</span>
+                <span class="chip loss">${fmtNum(res.pack.losses.length)} loss</span>
+                ${res.skipped ? `<span class="chip wait">${fmtNum(res.skipped)} dilewati</span>` : ""}
+              </div>
+              <div class="hint">Periode <b>${esc(fmtID(res.from))}</b> s/d <b>${esc(fmtID(res.to))}</b></div>
+              <div class="fc-act">
+                <button class="btn primary" data-act="imp-go">${icon("upload", 16)} Impor Sekarang</button>
+                <button class="btn" data-act="imp-cancel">Batal</button>
+              </div>
+            </div>`);
+          notif("ok", "File siap diimpor", `${fmtNum(res.rows)} baris terbaca dari ${esc(f.name)}. Periksa ringkasannya lalu tekan “Impor Sekarang”.`);
+        } catch (err) {
+          out.innerHTML = kartuFile(f, "");
+          notif("err", "Gagal membaca file", err.message);
+        }
       };
+      rd.onerror = () => { out.innerHTML = ""; zone.classList.remove("hidden"); notif("err", "Gagal membuka file", "Coba pilih ulang filenya."); };
       rd.readAsArrayBuffer(f);
-    };
+    }
+  }
+  /* Pemberitahuan di halaman (bukan sekadar toast sekilas) */
+  function notif(jenis, judul, pesan) {
+    const box = document.getElementById("imp-note"); if (!box) return;
+    const ic = jenis === "ok" ? "check" : jenis === "err" ? "alert" : "rocket";
+    box.innerHTML = `<div class="notif ${esc(jenis)}">
+      <span class="nf-ic">${icon(ic, 18)}</span>
+      <span class="nf-t"><b>${esc(judul)}</b>${pesan ? `<i>${esc(pesan)}</i>` : ""}</span>
+      <button class="nf-x" data-act="notif-close" aria-label="Tutup">${icon("close", 15)}</button>
+    </div>`;
+    box.scrollIntoView && box.scrollIntoView({ block: "nearest" });
   }
 
   /* ---------- SETTING ---------- */
@@ -1677,18 +1732,23 @@
       // setting
       case "prod-export": await exportProduksi(); break;
       case "gl-export": await exportGainLoss(); break;
+      case "notif-close": { const b = document.getElementById("imp-note"); if (b) b.innerHTML = ""; break; }
       case "imp-cancel": state.__imp = null; renderImport(); break;
       case "imp-go": {
         const res = state.__imp; if (!res) break;
-        el.disabled = true; el.textContent = "Mengimpor…";
+        el.disabled = true; el.innerHTML = "Mengimpor…";
         try {
           const n = await Store.importBulk(res.pack); state.__imp = null;
-          toast("Impor selesai: " + n.loaders + " loader, " + n.haulers + " fleet, " + n.losses + " loss");
+          notif("ok", "Impor berhasil", `${fmtNum(n.loaders)} loader-shift, ${fmtNum(n.haulers)} fleet, dan ${fmtNum(n.losses)} loss tersimpan. Membuka Laporan Produksi…`);
+          toast("Impor selesai");
           state.tanggal = res.from || state.tanggal; state.prodFrom = res.from; state.prodTo = res.to;
-          location.hash = "#/produksi";
-        } catch (e) { toast("Gagal impor: " + e.message); el.disabled = false; el.textContent = "Impor Sekarang"; }
+          setTimeout(() => { location.hash = "#/produksi"; }, 900);
+        } catch (e) {
+          notif("err", "Gagal mengimpor", e.message);
+          el.disabled = false; el.innerHTML = "Impor Sekarang";
+        }
         break; }
-      case "wipe-all": confirmModal("HAPUS SEMUA data ritase, fleet, dan loss? Tindakan ini tidak bisa dibatalkan.", async () => { const n = await Store.clearAll(); toast("Semua data dihapus (" + n + " loader)"); renderImport(); }, "Ya, hapus semua"); break;
+      case "wipe-all": confirmModal("HAPUS SEMUA data ritase, fleet, dan loss? Tindakan ini tidak bisa dibatalkan.", async () => { const n = await Store.clearAll(); renderImport(); notif("ok", "Semua data dihapus", `${fmtNum(n)} loader beserta fleet dan loss-nya dihapus. Data Master tetap utuh.`); }, "Ya, hapus semua"); break;
       case "prod-bulan": { const d = new Date(state.prodTo || todayISO()); const p = (n) => String(n).padStart(2, "0"); const y = d.getFullYear(), mo = d.getMonth(); state.prodFrom = `${y}-${p(mo + 1)}-01`; state.prodTo = `${y}-${p(mo + 1)}-${p(new Date(y, mo + 1, 0).getDate())}`; renderProduksi(); break; }
       case "ms-add": await msAdd(el.getAttribute("data-kind")); break;
       case "ms-del": { const k = el.getAttribute("data-kind"), ix = +el.getAttribute("data-i"); confirmModal("Hapus item ini dari Data Master?", async () => { await msDel(k, ix); }); break; }
