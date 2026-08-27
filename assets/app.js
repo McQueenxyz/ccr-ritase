@@ -152,6 +152,7 @@
   /* ---------- ROUTER ---------- */
   async function route() {
     if (!state.user) { unmountSidebar(); return renderLogin(); }
+    if (window.AnimatedGradient) window.AnimatedGradient.destroyAll();
     setTimeout(mountSidebar, 0); // sinkronkan menu aktif tiap pindah halaman
     if (!state.master) state.master = await Store.getMaster();
     const h = location.hash || "#/";
@@ -218,6 +219,11 @@
     $("login-form").addEventListener("submit", (e) => { e.preventDefault(); if (step === "nrp") toPw(); else doLogin(); });
     back.querySelector("[data-act='lg-reset']").addEventListener("click", (e) => { e.preventDefault(); toNrp(); });
     setTimeout(() => nrpIn.focus(), 30);
+    // Latar animasi WebGL (port dari komponen animated-gradient)
+    if (window.AnimatedGradient) {
+      const wrap = document.querySelector(".login-wrap");
+      if (wrap) { wrap.classList.add("has-grad"); window.AnimatedGradient.mount(wrap, { config: { preset: "Prism" }, noise: { opacity: 0.35, scale: 1 } }); }
+    }
   }
 
   /* Animator border-beam: sudut diputar dengan kecepatan yang di-spring saat hover.
