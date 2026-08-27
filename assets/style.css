@@ -320,15 +320,98 @@ body{ background:
 .sect .table-wrap table{background:transparent;}
 
 /* Setting: grid kartu master */
+/* ============================================================
+   SISTEM TAMPILAN BAKU (admin dashboard) — sidebar, topbar, KPI, card
+   ============================================================ */
+:root{ --sb-w:248px; }
+
+/* --- Sidebar tetap (desktop) --- */
+.sidebar{display:none;}
+@media (min-width:1024px){
+  body.has-sidebar .sidebar{display:flex; flex-direction:column; position:fixed; inset:0 auto 0 0; width:var(--sb-w); z-index:30;
+    background:var(--glass-strong); -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur);
+    border-right:1px solid var(--border); overflow-y:auto;}
+  body.has-sidebar{padding-left:var(--sb-w);}
+  .only-mobile{display:none !important;}
+}
+.sb-head{display:flex; align-items:center; gap:10px; padding:16px 18px; font-weight:650; font-size:17px; letter-spacing:-.01em; border-bottom:1px solid var(--border);}
+.sb-head .logo-svg{width:30px; height:20px; fill:currentColor; stroke:none;}
+.sb-body{padding:12px 10px; display:flex; flex-direction:column; gap:2px;}
+.sidebar .nav-item{display:flex; align-items:center; gap:11px; padding:9px 12px; border-radius:9px; cursor:pointer; font-size:14px; color:var(--muted); transition:.14s var(--ease);}
+.sidebar .nav-item:hover{background:var(--surface-2); color:var(--text);}
+.sidebar .nav-item.active{background:var(--accent-soft); color:var(--primary); font-weight:600;}
+.sidebar .nav-item.danger{color:var(--danger);} .sidebar .nav-item.danger:hover{background:var(--danger-soft);}
+.sidebar .nav-grp{margin-top:4px;}
+.sidebar .nav-gh{display:flex; align-items:center; gap:11px; padding:9px 12px; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--faint); font-weight:600;}
+.sidebar .nav-sub{padding:8px 12px 8px 40px; border-radius:9px; cursor:pointer; font-size:13.5px; color:var(--muted); transition:.14s var(--ease);}
+.sidebar .nav-sub:hover{background:var(--surface-2); color:var(--text);}
+.sidebar .nav-sep{height:1px; background:var(--border); margin:10px 12px;}
+
+/* --- Topbar --- */
+.appbar{gap:10px;}
+.crumbs{display:flex; align-items:center; gap:8px; font-size:14px; min-width:0;}
+.crumbs .c-root{color:var(--muted); font-weight:600;}
+.crumbs .c-sep{color:var(--faint);}
+.crumbs .c-now{font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.avatar{width:34px; height:34px; border-radius:50%; border:1px solid var(--border); background:var(--accent-soft); color:var(--primary);
+  font-size:12px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition:.16s var(--ease);}
+.avatar:hover{background:var(--primary); color:#fff; border-color:var(--primary);}
+
+/* --- Header halaman baku --- */
+.page-head{display:flex; align-items:flex-start; justify-content:space-between; gap:14px; margin:4px 0 20px; flex-wrap:wrap;}
+.page-head .page-title{margin:0; font-size:var(--fs-lead); font-weight:650; letter-spacing:-.02em;}
+.page-desc{margin:5px 0 0; color:var(--muted); font-size:13.5px; max-width:70ch;}
+
+/* --- KPI card baku (menggantikan .stat & .dcard yang dulu beda-beda) --- */
+.kpi-grid,.dstats,.summary{display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:14px; margin:0 0 20px;}
+.kpi,.dcard,.stat{display:flex; flex-direction:column; gap:6px; padding:18px; border-radius:var(--radius);
+  background:var(--glass-2); -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur);
+  border:1px solid var(--glass-brd); box-shadow:var(--gloss), var(--shadow); transition:.18s var(--ease);}
+.kpi:hover,.dcard:hover,.stat:hover{box-shadow:var(--gloss), var(--shadow-lg); transform:translateY(-2px);}
+.kpi-top{display:flex; align-items:center; justify-content:space-between; gap:8px;}
+.kpi-label,.dcard .t,.stat .t{font-size:13px; color:var(--muted); font-weight:500; margin:0;}
+.kpi-value,.dcard .n,.stat .n{font-size:var(--fs-stat); font-weight:650; line-height:1.1; letter-spacing:-.03em; font-variant-numeric:tabular-nums;}
+.kpi-suffix,.ns{font-size:15px; font-weight:500; color:var(--muted); margin-left:3px;}
+.kpi-hint{font-size:12.5px; color:var(--faint);}
+.trend{display:inline-flex; align-items:center; gap:3px; padding:3px 9px; border-radius:999px; font-size:11.5px; font-weight:600;}
+.trend.up{background:var(--success-soft); color:var(--success);}
+.trend.down{background:var(--danger-soft); color:var(--danger);}
+.trend.flat{background:var(--surface-2); color:var(--muted);}
+.dcard .dic{display:none;}
+.dcard>div{display:contents;}
+
+/* --- Card section baku --- */
+.sect{margin-bottom:18px;}
+.sect-h{display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:16px 18px 0; font-weight:600; font-size:15px;}
+.sect-title{font-weight:600; font-size:15px; letter-spacing:-.01em;}
+.sect-desc{font-weight:400; font-size:12.5px; color:var(--muted); margin-top:3px;}
+.sect-b{padding:14px 18px 18px;}
+.sect .table-wrap{margin:0 -4px;}
+
+/* --- Toolbar filter baku --- */
+.toolbar{display:flex; flex-wrap:wrap; gap:12px; align-items:end; margin-bottom:18px; padding:14px 16px;
+  background:var(--glass-2); -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur);
+  border:1px solid var(--glass-brd); border-radius:var(--radius); box-shadow:var(--shadow);}
+.toolbar>div{min-width:150px;}
+.toolbar label{margin-bottom:6px;}
+
 /* Form Ritase — 1 halaman (Fleet / Ritase / Loss / Report) */
 .ld-sec{margin-bottom:16px; scroll-margin-top:70px;}
 .ld-sec .sect-h{font-size:15px;}
 .secno{display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; margin-right:9px;
   border-radius:50%; background:var(--primary); color:#fff; font-size:12px; font-weight:600; vertical-align:-3px;}
-.ld-jump{display:flex; gap:8px; flex-wrap:wrap; margin:0 0 16px;}
-.ld-jump a{padding:7px 14px; border-radius:999px; border:1px solid var(--border); background:var(--surface);
-  font-size:13px; font-weight:550; color:var(--muted); text-decoration:none; transition:.16s var(--ease);}
-.ld-jump a:hover{color:var(--primary); border-color:var(--primary); background:var(--accent-soft);}
+/* Stepper alur input: Fleet → Ritase → Loss → Report */
+.stepper{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:0 0 20px;}
+@media (max-width:720px){ .stepper{grid-template-columns:repeat(2,1fr);} }
+.step{display:flex; align-items:center; gap:11px; padding:12px 14px; border-radius:var(--radius-sm);
+  border:1px solid var(--border); background:var(--surface); text-decoration:none; transition:.16s var(--ease);}
+.step:hover{border-color:var(--primary); background:var(--accent-soft);}
+.step-n{flex:none; width:26px; height:26px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center;
+  background:var(--surface-2); color:var(--muted); font-size:12.5px; font-weight:700;}
+.step.done .step-n{background:var(--success); color:#fff;}
+.step-t{display:flex; flex-direction:column; min-width:0;}
+.step-t b{font-size:13.5px; font-weight:600; color:var(--text);}
+.step-t i{font-style:normal; font-size:11.5px; color:var(--faint); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 
 /* Klasifikasi material */
 tbody tr.cls-sub td{color:var(--muted); font-size:13px;}

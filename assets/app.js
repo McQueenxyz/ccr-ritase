@@ -97,19 +97,38 @@
   /* ---------- theme: IKUT PERANGKAT (prefers-color-scheme), tanpa toggle ---------- */
   function initTheme() { document.documentElement.removeAttribute("data-theme"); localStorage.removeItem("hpr_theme"); }
 
-  /* ---------- appbar & modal ---------- */
+  /* ---------- appbar (topbar) & modal ---------- */
   function appbar(o = {}) {
     const hh = location.hash || "#/";
     const isHome = (hh === "#/" || hh === "" || hh === "#");
+    const u = state.user || {};
+    const inisial = String(u.nama || u.nrp || "?").trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
     return `<div class="appbar">
-      <button class="iconbtn" data-act="drawer" title="Menu">${icon("menu")}</button>
+      <button class="iconbtn only-mobile" data-act="drawer" title="Menu">${icon("menu")}</button>
       ${(o.back || !isHome) ? `<button class="iconbtn ab-back" data-act="back" title="Kembali">${icon("back")}</button>` : ""}
-      <div class="logo"><span>CCR</span></div>
-      ${o.crumb ? `<span class="crumb">${esc(o.crumb)}</span>` : ""}
+      <nav class="crumbs"><span class="c-root">CCR</span>${o.crumb ? `<span class="c-sep">/</span><span class="c-now">${esc(o.crumb)}</span>` : ""}</nav>
       <span class="spacer"></span>
-      <span class="mode-badge ${Store.mode}">${Store.mode === "supabase" ? "ONLINE" : "LOKAL"}</span>
+      <span class="mode-badge ${Store.mode}" title="${Store.mode === "supabase" ? "Data tersimpan di database online" : "Data tersimpan di perangkat ini"}">${Store.mode === "supabase" ? "ONLINE" : "LOKAL"}</span>
+      <button class="avatar" data-act="nav" data-to="#/account" title="${esc(u.nama || "")}">${esc(inisial)}</button>
     </div>`;
   }
+  /* Sidebar tetap (desktop) — memakai daftar menu yang sama dengan drawer mobile. */
+  function mountSidebar() {
+    let el = document.getElementById("sidebar");
+    if (!el) {
+      el = document.createElement("aside"); el.id = "sidebar"; el.className = "sidebar";
+      document.body.appendChild(el);
+      el.addEventListener("click", (e) => {
+        const lo = e.target.closest('[data-act="logout"]');
+        if (lo) { confirmModal("Keluar dari akun CCR?", async () => { await Store.signOut(); state.user = null; state.master = null; renderLogin(); }, "Ya, keluar"); return; }
+        const nav = e.target.closest("[data-to]");
+        if (nav && nav.getAttribute("data-to")) { const to = nav.getAttribute("data-to"); if ((location.hash || "#/") === to) route(); else location.hash = to; }
+      });
+    }
+    el.innerHTML = `<div class="sb-head">${LOGO_SVG}<span>CCR</span></div><div class="sb-body">${drawerItems()}</div>`;
+    document.body.classList.toggle("has-sidebar", !!state.user);
+  }
+  function unmountSidebar() { const el = document.getElementById("sidebar"); if (el) el.remove(); document.body.classList.remove("has-sidebar"); }
   function openModal(title, bodyHtml) {
     const bg = document.createElement("div"); bg.className = "modal-bg";
     bg.innerHTML = `<div class="modal"><h3>${esc(title)}</h3>${bodyHtml}</div>`;
@@ -134,7 +153,8 @@
 
   /* ---------- ROUTER ---------- */
   async function route() {
-    if (!state.user) return renderLogin();
+    if (!state.user) { unmountSidebar(); return renderLogin(); }
+    setTimeout(mountSidebar, 0); // sinkronkan menu aktif tiap pindah halaman
     if (!state.master) state.master = await Store.getMaster();
     const h = location.hash || "#/";
     closeDrawer();
@@ -230,6 +250,31 @@
   }
 
   const fmtNum = (n) => (Number(n) || 0).toLocaleString("id-ID");
+  /* ---- Komponen tampilan baku (dipakai SEMUA halaman agar konsisten) ---- */
+  // Judul halaman: judul + penjelasan singkat + tombol aksi (opsional)
+  function pageHead(title, desc, actions) {
+    return `<div class="page-head">
+      <div><h1 class="page-title">${esc(title)}</h1>${desc ? `<p class="page-desc">${esc(desc)}</p>` : ""}</div>
+      ${actions ? `<div class="actions">${actions}</div>` : ""}
+    </div>`;
+  }
+  // Kartu KPI: label, angka besar, badge tren, keterangan
+  function kpi(label, value, o = {}) {
+    const t = o.trend; // {dir:'up'|'down'|'flat', text:'+12,5%'}
+    const badge = t ? `<span class="trend ${t.dir}">${t.dir === "up" ? "↑" : t.dir === "down" ? "↓" : "→"} ${esc(t.text)}</span>` : "";
+    return `<div class="kpi ${o.tone || ""}">
+      <div class="kpi-top"><span class="kpi-label">${esc(label)}</span>${badge}</div>
+      <div class="kpi-value">${value}${o.suffix ? `<span class="kpi-suffix">${esc(o.suffix)}</span>` : ""}</div>
+      ${o.hint ? `<div class="kpi-hint">${esc(o.hint)}</div>` : ""}
+    </div>`;
+  }
+  const kpiGrid = (cards) => `<div class="kpi-grid">${cards}</div>`;
+  // Kartu section: judul + penjelasan + aksi kanan
+  function card(title, body, o = {}) {
+    return `<div class="card sect" ${o.id ? `id="${o.id}"` : ""}>
+      ${title ? `<div class="sect-h"><div><span class="sect-title">${title}</span>${o.desc ? `<div class="sect-desc">${esc(o.desc)}</div>` : ""}</div>${o.right || ""}</div>` : ""}
+      <div class="sect-b">${body}</div></div>`;
+  }
 
   /* ---------- NAVBAR (drawer) ---------- */
   function drawerItems() {
@@ -293,9 +338,9 @@
         <div class="grow"><label>Shift</label><select id="d-shift">${shiftOpts}</select></div>
       </div>
       <div class="dstats">
-        <div class="dcard"><span class="dic blue">${icon("truck", 20)}</span><div><div class="n">${fmtNum(totalRit)}</div><div class="t">Total Ritase</div></div></div>
-        <div class="dcard"><span class="dic green">${icon("box", 20)}</span><div><div class="n">${fmtNum(Math.round(totalBcm))}</div><div class="t">Total BCM</div></div></div>
-        <div class="dcard"><span class="dic amber">${icon("clock", 20)}</span><div><div class="n">${hoursReported}<span class="ns">/${jams.length}</span></div><div class="t">Jam Terlapor</div></div></div>
+        ${kpi("Total Ritase", fmtNum(totalRit), { hint: "Seluruh hauler pada shift ini" })}
+        ${kpi("Total BCM", fmtNum(Math.round(totalBcm)), { hint: "Volume terangkut" })}
+        ${kpi("Jam Terlapor", hoursReported, { suffix: "/" + jams.length + " jam", trend: { dir: hoursReported >= jams.length ? "up" : "flat", text: Math.round((hoursReported / jams.length) * 100) + "%" } })}
       </div>
       <div class="card">
         <div class="dchart-h"><span class="pt">Ritase per Jam</span><span class="chip">Shift ${state.shift}</span></div>
@@ -315,7 +360,7 @@
     const exRows = excas.length ? excas.map((l, i) => `<tr><td class="num">${i + 1}</td><td>${esc(l.kode)}</td><td>${esc(l.material_default || "-")}</td>
       <td class="actions"><button class="iconbtn" data-act="del-unit" data-kind="exca" data-id="${esc(l.kode)}" title="Hapus">${icon("delete")}</button></td></tr>`).join("") : `<tr><td colspan="4" class="empty">Belum ada Loader.</td></tr>`;
     app.innerHTML = `${appbar({ menu: true, crumb: "Unit" })}<div class="container">
-      <div class="page-head"><div class="page-title">Populasi Unit</div><button class="btn primary" data-act="add-unit">${icon("add", 18)} Tambah Unit</button></div>
+      ${pageHead("Populasi Unit", "Daftar dump truck dan excavator yang terdaftar di sistem.", `<button class="btn primary" data-act="add-unit">${icon("add", 18)} Tambah Unit</button>`)}
       <div class="card sect"><div class="sect-h"><span>Dump Truck (DT)</span><span class="chip">${dts.length}</span></div>
         <div class="table-wrap"><table><thead><tr><th class="num">No</th><th>Nomor Lambung</th><th>Tonase</th><th>Aksi</th></tr></thead><tbody>${dtRows}</tbody></table></div></div>
       <div class="card sect"><div class="sect-h"><span>Excavator (Loader)</span><span class="chip">${excas.length}</span></div>
@@ -358,7 +403,7 @@
     const exRows = extra.length ? extra.map((d, i) => `<tr><td>${esc(d.code || "-")}</td><td>${esc(d.desc)}</td>
       <td class="actions"><button class="iconbtn" data-act="del-delay" data-i="${i}" title="Hapus">${icon("delete")}</button></td></tr>`).join("") : `<tr><td colspan="3" class="empty">Belum ada delay tambahan.</td></tr>`;
     app.innerHTML = `${appbar({ menu: true, crumb: "Delay" })}<div class="container">
-      <div class="page-head"><div class="page-title">Delay</div><button class="btn primary" data-act="add-delay">${icon("add", 18)} Tambah Delay</button></div>
+      ${pageHead("Delay", "Daftar kode delay SS6 dan delay tambahan milik Anda.", `<button class="btn primary" data-act="add-delay">${icon("add", 18)} Tambah Delay</button>`)}
       <div class="card sect"><div class="sect-h"><span>Delay Tambahan</span><span class="chip">${extra.length}</span></div>
         <div class="table-wrap"><table><thead><tr><th>Kode</th><th>Deskripsi</th><th>Aksi</th></tr></thead><tbody>${exRows}</tbody></table></div></div>
       <div class="card sect"><div class="sect-h"><span>Daftar Kode Delay (SS6)</span><span class="chip">${Object.keys(codes).length}</span></div>
@@ -441,9 +486,9 @@
           <button class="bcta" data-act="report-now" data-jam="${nowJam}">Buat laporan ${icon("next", 15)}</button>
         </div>` : ""}
         <div class="summary">
-          <div class="stat ok"><div class="n">${loaders.length}</div><div class="t">Loader aktif</div></div>
+          ${kpi("Loader Aktif", loaders.length, { hint: "Unit terdaftar shift ini" })}
           <div class="stat"><div class="n">${totalRit}</div><div class="t">Total rit shift</div></div>
-          <div class="stat ${nowJam ? "hot" : ""}"><div class="n">${nowJam ? belum : haulers.length}</div><div class="t">${nowJam ? "Belum jam " + nowJam : "Total hauler"}</div></div>
+          ${nowJam ? kpi("Belum Diisi", belum, { hint: "Untuk jam " + nowJam, trend: { dir: belum > 0 ? "down" : "up", text: belum > 0 ? "perlu diisi" : "lengkap" } }) : kpi("Total Hauler", haulers.length, { hint: "Seluruh fleet" })}
         </div>
         <div class="papan-head"><span class="pt">Papan Shift ${esc(state.shift)}</span>${nowJam ? `<span class="live"><span class="bl"></span> ${nowJam}</span>` : ""}</div>
         <div class="legend"><span><i style="background:#34c759"></i>Terisi</span><span><i style="background:#ffcc00"></i>Delay/Idle</span><span><i style="background:var(--surface-2);border:1px solid var(--border)"></i>Belum</span><span><i style="box-shadow:0 0 0 2px var(--warning) inset"></i>Jam ini</span></div>
@@ -548,8 +593,15 @@
     const totLoss = losses.reduce((a, x) => a + num(x.duration), 0);
     app.innerHTML = `${appbar({ back: true, menu: true, crumb: `${l.loader}` })}<div class="container">
       <div class="page-title">${esc(l.loader)} <span class="hint">PIT ${esc(l.pit)} · GL ${esc(l.gl_pit || "-")} · Shift ${esc(l.shift)} · ${esc(fmtID(l.tanggal))}</span></div>
-      <div class="ld-jump">
-        <a href="#sec-1">Fleet</a><a href="#sec-2">Ritase</a><a href="#sec-3">Loss</a><a href="#sec-4">Report</a>
+      <div class="stepper">
+        ${[[1, "Fleet", "Daftar hauler", haulers.length > 0],
+           [2, "Ritase", "Isi angka per jam", totRit > 0],
+           [3, "Loss", "Catat kendala", losses.length > 0],
+           [4, "Report", "Kirim WhatsApp", false]].map(([n, t, d, done]) =>
+          `<a class="step ${done ? "done" : ""}" href="#sec-${n}">
+             <span class="step-n">${done ? "✓" : n}</span>
+             <span class="step-t"><b>${t}</b><i>${d}</i></span>
+           </a>`).join("")}
       </div>
       ${sec(1, "Fleet (Hauler)", `<span class="chip">${haulers.length}</span>`, fleetSection(l, haulers))}
       ${sec(2, "Ritase", `<span class="chip ok">${totRit} rit</span>`, ritaseSection(l, haulers))}
@@ -863,7 +915,7 @@
     const rowsLd = Object.keys(perLoader).sort().map((k) => `<tr><td>${esc(k)}</td><td class="num">${fmtNum(perLoader[k].rit)}</td><td class="num">${fmtNum(Math.round(perLoader[k].bcm))}</td></tr>`).join("") || `<tr><td colspan="3" class="empty">—</td></tr>`;
     const shiftOpts = `<option value="">Semua shift</option>` + state.master.shifts.map((s) => `<option value="${s.kode}" ${s.kode === state.prodShift ? "selected" : ""}>${esc(s.label)}</option>`).join("");
     app.innerHTML = `${appbar({ crumb: "Laporan Produksi" })}<div class="container">
-      <div class="page-title">Laporan Produksi</div>
+      ${pageHead("Laporan Produksi", "Rekap ritase, BCM, dan loss berdasarkan rentang tanggal yang dipilih.")}
       <div class="toolbar">
         <div><label>Dari tanggal</label><input type="date" id="p-from" value="${state.prodFrom}"></div>
         <div><label>Sampai tanggal</label><input type="date" id="p-to" value="${state.prodTo}"></div>
@@ -872,9 +924,9 @@
         <button class="btn primary" data-act="prod-export">${icon("download", 18)} Export Excel</button>
       </div>
       <div class="dstats">
-        <div class="dcard"><span class="dic blue">${icon("truck", 20)}</span><div><div class="n">${fmtNum(totRit)}</div><div class="t">Total Ritase</div></div></div>
-        <div class="dcard"><span class="dic green">${icon("box", 20)}</span><div><div class="n">${fmtNum(Math.round(totBcm))}</div><div class="t">Total BCM</div></div></div>
-        <div class="dcard"><span class="dic amber">${icon("clock", 20)}</span><div><div class="n">${fmtNum(totLoss)}<span class="ns">'</span></div><div class="t">Total Loss</div></div></div>
+        ${kpi("Total Ritase", fmtNum(totRit), { hint: "Pada rentang terpilih" })}
+        ${kpi("Total BCM", fmtNum(Math.round(totBcm)), { hint: "Volume terangkut" })}
+        ${kpi("Total Loss", fmtNum(totLoss), { suffix: "menit", hint: "Delay + idle + breakdown" })}
       </div>
       <div class="card sect"><div class="sect-h"><span>Per Tanggal</span><span class="chip">${tgls.length} hari</span></div><div class="sect-b">
         <div class="table-wrap"><table><thead><tr><th>Tanggal</th><th class="num">Ritase</th><th class="num">BCM</th><th class="num">Loss</th></tr></thead><tbody>${rowsTgl}</tbody></table></div></div></div>
@@ -1084,7 +1136,7 @@
       <div class="wf-row"><span class="wf-l">Actual</span><span class="wf-b"><i style="width:${(T.actual / maxV) * 100}%;background:var(--primary)"></i></span><span class="wf-v">${R1(T.actual)}</span></div>
     </div>`;
     app.innerHTML = `${appbar({ crumb: "Gain & Loss" })}<div class="container">
-      <div class="page-title">Gain &amp; Loss (BCM)</div>
+      ${pageHead("Gain & Loss", "Perbandingan rencana dan realisasi produksi dalam BCM, terurai per waktu dan produktivitas.")}
       <div class="toolbar">
         <div><label>Dari tanggal</label><input type="date" id="g-from" value="${state.prodFrom}"></div>
         <div><label>Sampai tanggal</label><input type="date" id="g-to" value="${state.prodTo}"></div>
@@ -1092,9 +1144,9 @@
         <button class="btn primary" data-act="gl-export">${icon("download", 18)} Export Excel</button>
       </div>
       <div class="dstats">
-        <div class="dcard"><span class="dic blue">${icon("box", 20)}</span><div><div class="n">${R1(T.plan)}</div><div class="t">Plan BCM (MOHH)</div></div></div>
-        <div class="dcard"><span class="dic green">${icon("truck", 20)}</span><div><div class="n">${R1(T.actual)}</div><div class="t">Actual BCM</div></div></div>
-        <div class="dcard"><span class="dic ${T.total >= 0 ? "green" : "amber"}">${icon("clock", 20)}</span><div><div class="n ${cls(T.total)}">${sign(T.total)}</div><div class="t">Total Gain / Loss</div></div></div>
+        ${kpi("Plan BCM", R1(T.plan), { hint: "Berdasarkan MOHH " + R1(T.mohh) + " jam" })}
+        ${kpi("Actual BCM", R1(T.actual), { hint: "EWH " + R1(T.ewh) + " jam" })}
+        ${kpi("Total Gain / Loss", '<span class="' + cls(T.total) + '">' + sign(T.total) + '</span>', { suffix: "BCM", trend: { dir: T.total >= 0 ? "up" : "down", text: T.total >= 0 ? "di atas plan" : "di bawah plan" } })}
       </div>
       <div class="card sect"><div class="sect-h"><span>Waterfall</span><span class="chip">${R1(T.mohh)} jam MOHH · ${R1(T.ewh)} jam EWH</span></div><div class="sect-b">${wf}</div></div>
       <div class="card sect"><div class="sect-h"><span>Per PC (Unit)</span><span class="chip">${list.length}</span></div><div class="sect-b">
@@ -1247,7 +1299,7 @@
 
   function renderImport() {
     app.innerHTML = `${appbar({ crumb: "Import Data" })}<div class="container">
-      <div class="page-title">Import Data HPR / ORE</div>
+      ${pageHead("Import Data", "Masukkan data actual dari file Excel export SS6 (format HPR dan ORE).")}
       <div class="card sect"><div class="sect-h"><span>Pilih File</span></div><div class="sect-b">
         <div class="hint" style="margin:12px 0">Pilih file Excel hasil export SS6 (<b>.xlsx</b> / <b>.xlsb</b>). Format <b>HPR</b> (OB/Quarry) dan <b>ORE</b> dikenali otomatis — boleh satu file berisi keduanya.</div>
         <input type="file" id="imp-file" accept=".xlsx,.xlsb,.xls,.csv" />
@@ -1321,8 +1373,7 @@
       : `<div class="hint">Belum ada data.</div>`;
     const pg = m.pengawas || [];
     app.innerHTML = `${appbar({ crumb: "Setting" })}<div class="container">
-      <div class="page-head"><div class="page-title">Data Master</div>
-        <div class="actions"><button class="btn" data-act="reset-master">Kembalikan Default</button></div></div>
+      ${pageHead("Data Master", "Daftar pilihan yang muncul di seluruh formulir: pengawas, material, kode loss, dan lokasi.", `<button class="btn" data-act="reset-master">Kembalikan Default</button>`)}
 
       <div class="card sect"><div class="sect-h"><span>GL (Pengawas)</span><span class="chip">${pg.length}</span></div><div class="sect-b">
         ${pg.length ? `<div class="table-wrap"><table><thead><tr><th>Nama Pengawas</th><th>NRP</th><th>Aksi</th></tr></thead><tbody>${pg.map((p, i) => `<tr><td>${esc(p.nama)}</td><td>${esc(p.nrp)}</td><td class="actions"><button class="iconbtn" data-act="ms-del" data-kind="pengawas" data-i="${i}" title="Hapus">${icon("delete")}</button></td></tr>`).join("")}</tbody></table></div>` : `<div class="hint">Belum ada pengawas.</div>`}
@@ -1430,7 +1481,7 @@
   /* ---------- ACCOUNT ---------- */
   function renderAccount() {
     app.innerHTML = `${appbar({ crumb: "Account" })}<div class="container">
-      <div class="page-title">Akun</div>
+      ${pageHead("Akun", "Informasi pengguna yang sedang masuk.")}
       <div class="card stack">
         <div><label>Nama</label><div style="font-size:17px;font-weight:600">${esc(state.user.nama)}</div></div>
         <div><label>NRP</label><div>${esc(state.user.nrp)}</div></div>
