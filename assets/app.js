@@ -1309,12 +1309,12 @@
       ${pageHead("Import Data", "Masukkan data actual dari file Excel export SS6 (format HPR dan ORE).")}
       <div id="imp-note"></div>
       <div class="card sect"><div class="sect-h"><div><span class="sect-title">Pilih File</span><div class="sect-desc">Format HPR (OB/Quarry) dan ORE dikenali otomatis — boleh satu file berisi keduanya.</div></div></div><div class="sect-b">
-        <label class="dropzone" id="imp-zone" for="imp-file">
-          <input type="file" id="imp-file" accept=".xlsx,.xlsb,.xls,.csv" />
+        <input type="file" id="imp-file" accept=".xlsx,.xlsb,.xls,.csv" hidden />
+        <div class="dropzone" id="imp-zone" role="button" tabindex="0" aria-label="Pilih atau seret file Excel">
           <span class="dz-ic">${icon("upload", 22)}</span>
           <span class="dz-t">Seret file ke sini</span>
           <span class="dz-d">atau <b>klik untuk memilih</b> · .xlsx &nbsp;.xlsb &nbsp;.csv</span>
-        </label>
+        </div>
         <div id="imp-out"></div>
       </div></div>
       <div class="card sect"><div class="sect-h"><span>Hapus Semua Data</span></div><div class="sect-b">
@@ -1325,6 +1325,10 @@
     const out = document.getElementById("imp-out");
     const zone = document.getElementById("imp-zone");
     const fileInput = document.getElementById("imp-file");
+
+    // Klik / keyboard → buka pemilih file secara eksplisit (lebih andal daripada <label for>)
+    zone.addEventListener("click", () => { fileInput.value = ""; fileInput.click(); });
+    zone.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileInput.value = ""; fileInput.click(); } });
 
     // Drag & drop
     ["dragenter", "dragover"].forEach((ev) => zone.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); zone.classList.add("over"); }));

@@ -399,7 +399,7 @@ tr.foot td.sticky-col{z-index:3;}
   background:var(--surface-2); text-align:center; transition:border-color .15s var(--ease), background .15s var(--ease), transform .15s var(--ease);}
 .dropzone:hover{border-color:var(--primary); background:var(--surface-3);}
 .dropzone.over{border-color:var(--primary); border-style:solid; background:var(--surface-3); transform:scale(1.005);}
-.dropzone input[type="file"]{position:absolute; width:1px; height:1px; opacity:0; pointer-events:none;}
+.dropzone:focus-visible{outline:none; border-color:var(--primary); box-shadow:0 0 0 3px color-mix(in srgb,var(--ring) 25%,transparent);}
 .dz-ic{width:52px; height:52px; border-radius:var(--pill); background:var(--primary); color:var(--primary-fg);
   display:inline-flex; align-items:center; justify-content:center; margin-bottom:4px; transition:transform .15s var(--ease);}
 .dropzone:hover .dz-ic,.dropzone.over .dz-ic{transform:translateY(-2px);}
