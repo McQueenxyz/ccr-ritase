@@ -4,31 +4,61 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
   <title>CCR — Laporan Ritase</title>
-  <!-- Jangan simpan HTML di cache: GitHub Pages memasang max-age=600 sehingga
-       pembaruan tidak terlihat sampai 10 menit. Tanpa ini, penanda ?v= tak terbaca. -->
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <meta http-equiv="Pragma" content="no-cache" />
-  <meta http-equiv="Expires" content="0" />
   <meta name="theme-color" content="#171717" />
   <link rel="icon" href="assets/logo.svg" />
-  <link rel="stylesheet" href="assets/style.css?v=20260819i" />
+
+  <!-- ============================================================
+       PEMUAT ASET ANTI-CACHE
+       GitHub Pages mengirim "Cache-Control: max-age=600" untuk HTML dan
+       <meta http-equiv> TIDAK diindahkan sebagian besar peramban. Akibatnya
+       index.html bisa tertahan 10 menit dan penanda ?v= tak pernah terbaca.
+       Solusi: muat CSS & JS aplikasi lewat skrip dengan penanda waktu, jadi
+       aset SELALU versi terbaru walau HTML-nya masih dari cache.
+       ============================================================ -->
+  <script>
+    (function () {
+      window.__CCR_T = Date.now();
+      var l = document.createElement("link");
+      l.rel = "stylesheet";
+      l.href = "assets/style.css?t=" + window.__CCR_T;
+      document.head.appendChild(l);
+    })();
+  </script>
 </head>
 <body>
   <div id="app"></div>
+  <noscript>Aplikasi CCR memerlukan JavaScript. Aktifkan JavaScript di peramban Anda.</noscript>
 
-  <!-- Library Supabase (dipakai hanya saat APP_MODE = "supabase").
-       Aman diabaikan saat mode lokal. -->
+  <!-- Pustaka pihak ketiga (jarang berubah, boleh di-cache) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <!-- SheetJS (lokal, offline) — untuk Export Excel format SS6 -->
   <script src="assets/vendor/xlsx.full.min.js"></script>
 
-  <!-- Kode aplikasi (?v= = cache-busting; naikkan angka tiap update) -->
-  <script src="assets/gradient.js?v=20260819i"></script>
-  <script src="config.js?v=20260819i"></script>
-  <script src="assets/seed.js?v=20260819i"></script>
-  <script src="assets/ss6-codes.js?v=20260819i"></script>
-  <script src="assets/store.js?v=20260819i"></script>
-  <script src="assets/app.js?v=20260819i"></script>
+  <!-- Kode aplikasi — dimuat berurutan dengan penanda waktu -->
+  <script>
+    (function () {
+      var files = [
+        "assets/gradient.js",
+        "config.js",
+        "assets/seed.js",
+        "assets/ss6-codes.js",
+        "assets/store.js",
+        "assets/app.js"
+      ];
+      var t = window.__CCR_T || Date.now();
+      (function next(i) {
+        if (i >= files.length) return;
+        var s = document.createElement("script");
+        s.src = files[i] + "?t=" + t;
+        s.async = false;
+        s.onload = function () { next(i + 1); };
+        s.onerror = function () {
+          document.getElementById("app").innerHTML =
+            '<div style="font:14px system-ui;padding:32px;text-align:center;color:#dc2626">' +
+            'Gagal memuat <b>' + files[i] + '</b>.<br>Periksa koneksi lalu muat ulang halaman.</div>';
+        };
+        document.body.appendChild(s);
+      })(0);
+    })();
+  </script>
 </body>
 </html>
