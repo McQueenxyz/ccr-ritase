@@ -66,6 +66,9 @@
     save: '<path d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>',
     rocket: '<path d="M15.59 14.37a6 6 0 0 1-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 0 0 6.16-12.12A14.98 14.98 0 0 0 9.63 8.41m5.96 5.96a14.9 14.9 0 0 1-5.84 2.58m-.12-8.54a6 6 0 0 0-7.38 5.84h4.8m2.58-5.84a14.93 14.93 0 0 0-2.58 5.84m2.7 2.7c-.1.02-.21.04-.31.06a15.1 15.1 0 0 1-2.45-2.45 14.9 14.9 0 0 1 .06-.31m-2.24 2.39a4.49 4.49 0 0 0-1.76 4.3 4.49 4.49 0 0 0 4.31-1.75M16.5 9a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z"/>',
     grid: '<path d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z"/>',
+    calendar: '<path d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"/>',
+    chevL: '<path d="M15.75 19.5 8.25 12l7.5-7.5"/>',
+    chevR: '<path d="m8.25 4.5 7.5 7.5-7.5 7.5"/>',
     box: '<path d="m21 7.5-9-5.25L3 7.5m18 0-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9"/>',
     // Ikon dump truck: Abdul Wahhab via The Noun Project (CC BY) — wajib atribusi.
     dumptruck: '<path d="M28955 36044c-3155,0 -6306,-7 -9469,-7 0,-643 -72,-1253 -236,-1876l8898 0 807 1883z"/><path d="M65880 29042l13331 0 -1 1380 -5026 1338 0 4284 -2669 0c-21,-3425 -2423,-6283 -5635,-7002z"/><path d="M49358 29042l13357 0c-3211,719 -5614,3577 -5636,7002l-2086 0c-20,-3425 -2422,-6283 -5635,-7002z"/><path d="M12054 7634l10739 -22 -8 17761 1081 0 0 -15310 1748 0 0 10334 4483 0 -126 8645 16223 0c-3211,717 -5616,3578 -5637,7002l-10566 0 -1218 -2835 -9843 0c-1091,-2607 -3661,-4441 -6663,-4441 -3989,0 -7217,3236 -7217,7221l-5050 45 0 -7000 768 6 921 -9484 2306 -1046c3662,-11056 886,-10861 8059,-10876zm1810 14407l2397 0 0 1103 -2397 0 0 -1103zm-6891 -8288l-1181 4294 5665 0c5507,0 4576,851 4576,-4701l0 -4560c-9262,24 -7046,-1091 -9060,4967zm15810 12682l-8 2607 1782 0 0 -2609 -1774 2z"/><path d="M12170 29508c3458,0 6261,2804 6261,6262 0,3457 -2803,6260 -6261,6260 -3455,0 -6261,-2803 -6261,-6260 0,-3458 2806,-6262 6261,-6262z"/><path d="M47714 29508c3457,0 6260,2804 6260,6262 0,3457 -2803,6260 -6260,6260 -3456,0 -6260,-2803 -6260,-6260 0,-3458 2804,-6262 6260,-6262z"/><path d="M64244 29508c3457,0 6260,2804 6260,6262 0,3457 -2803,6260 -6260,6260 -3455,0 -6260,-2803 -6260,-6260 0,-3458 2805,-6262 6260,-6262z"/><polygon points="36301,26119 75867,26119 75867,28519 36301,28519 "/><path d="M17442 0l11922 0 3581 6523 1 8 8194 17131 40828 0c-1044,-2383 -340,-2540 -3142,-2546l-6103 -11128 -215 316 4416 10807 -8364 -19 -6091 -11104 -215 316 4407 10784 -7901 -17 -6078 -11083 -215 316 4397 10762 -7662 -17 -6067 -11061 -215 316 4388 10741 -5215 -138 -6022 -12228 43021 -165c7082,15972 12428,17296 -3406,17265l-42326 -86 -7402 -21606c-6194,-458 -9599,1331 -8516,-4087z"/>',
@@ -1750,8 +1753,89 @@
       }));
     });
   }
+  /* ---------- Date picker (kalender) seragam ----------
+     Input <input type="date"> asli TETAP ada (tersembunyi) sehingga seluruh kode
+     lama yang membaca .value / mendengar "change" tidak berubah. */
+  const HARI = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
+  const BULAN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+  const isoOf = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const parseISO = (s) => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || "")); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null; };
+  const labelTgl = (s) => { const d = parseISO(s); return d ? `${d.getDate()} ${BULAN[d.getMonth()].slice(0, 3)} ${d.getFullYear()}` : "Pilih tanggal"; };
+  function closeDates() { document.querySelectorAll(".xdate.open").forEach((x) => x.classList.remove("open")); }
+  function enhanceDate(inp) {
+    if (inp.dataset.enh) return;
+    inp.dataset.enh = "1";
+    const wrap = document.createElement("div"); wrap.className = "xdate";
+    inp.parentNode.insertBefore(wrap, inp); wrap.appendChild(inp); inp.classList.add("native");
+    const trg = document.createElement("button"); trg.type = "button"; trg.className = "trigger";
+    const panel = document.createElement("div"); panel.className = "cal-panel";
+    wrap.appendChild(trg); wrap.appendChild(panel);
+    let view = parseISO(inp.value) || new Date();
+    view = new Date(view.getFullYear(), view.getMonth(), 1);
+
+    const paintTrigger = () => {
+      const has = !!parseISO(inp.value);
+      trg.innerHTML = `${icon("calendar", 16)}<span class="val${has ? "" : " ph"}">${esc(labelTgl(inp.value))}</span>`;
+    };
+    function paintCal() {
+      const sel = parseISO(inp.value), today = new Date();
+      const y = view.getFullYear(), m = view.getMonth();
+      const first = new Date(y, m, 1), start = first.getDay();
+      const days = new Date(y, m + 1, 0).getDate();
+      let cells = "";
+      for (let i = 0; i < start; i++) cells += `<span class="cd out"></span>`;
+      for (let d = 1; d <= days; d++) {
+        const cur = new Date(y, m, d);
+        const isSel = sel && isoOf(sel) === isoOf(cur);
+        const isToday = isoOf(today) === isoOf(cur);
+        cells += `<button type="button" class="cd${isSel ? " sel" : ""}${isToday ? " today" : ""}" data-d="${isoOf(cur)}">${d}</button>`;
+      }
+      panel.innerHTML = `
+        <div class="cal-head">
+          <button type="button" class="cal-nav" data-mv="-1" aria-label="Bulan sebelumnya">${icon("chevL", 15)}</button>
+          <div class="cal-title">${BULAN[m]} ${y}</div>
+          <button type="button" class="cal-nav" data-mv="1" aria-label="Bulan berikutnya">${icon("chevR", 15)}</button>
+        </div>
+        <div class="cal-dow">${HARI.map((h) => `<span>${h}</span>`).join("")}</div>
+        <div class="cal-grid">${cells}</div>
+        <div class="cal-foot"><button type="button" class="cal-today" data-d="${isoOf(new Date())}">Hari ini</button></div>`;
+    }
+    function place() {
+      const r = trg.getBoundingClientRect();
+      const w = 268, gap = 6;
+      let left = Math.min(r.left, window.innerWidth - w - 8); left = Math.max(8, left);
+      panel.style.left = left + "px"; panel.style.width = w + "px";
+      const below = window.innerHeight - r.bottom;
+      if (below < 320 && r.top > below) { panel.style.top = "auto"; panel.style.bottom = (window.innerHeight - r.top + gap) + "px"; }
+      else { panel.style.bottom = "auto"; panel.style.top = (r.bottom + gap) + "px"; }
+    }
+    trg.addEventListener("click", (e) => {
+      e.stopPropagation(); const was = wrap.classList.contains("open");
+      closeDates(); if (was) return;
+      view = parseISO(inp.value) || new Date(); view = new Date(view.getFullYear(), view.getMonth(), 1);
+      paintCal(); wrap.classList.add("open"); place();
+    });
+    panel.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const mv = e.target.closest("[data-mv]");
+      if (mv) { view = new Date(view.getFullYear(), view.getMonth() + (+mv.getAttribute("data-mv")), 1); paintCal(); return; }
+      const d = e.target.closest("[data-d]");
+      if (d) {
+        inp.value = d.getAttribute("data-d");
+        inp.dispatchEvent(new Event("change", { bubbles: true }));
+        wrap.classList.remove("open"); paintTrigger();
+      }
+    });
+    inp.addEventListener("change", paintTrigger);
+    paintTrigger();
+  }
+  document.addEventListener("click", closeDates);
+  window.addEventListener("resize", closeDates);
+  window.addEventListener("scroll", closeDates, true);
+
   function enhanceUI(root) {
     // Custom select DIMATIKAN — pakai <select> bawaan (scroll & simetri sempurna, ramah HP).
+    (root || document).querySelectorAll('input[type="date"]:not(.native)').forEach(enhanceDate);
     enhanceSortableTables(root);
   }
 
