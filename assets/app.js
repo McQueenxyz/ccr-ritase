@@ -467,7 +467,7 @@
         const hasData = r > 0 || d > 0 || i > 0, now = j === nowJam;
         const loss = d + i, work = hasData ? Math.max(0, 60 - loss) : 0;
         const wp = P(work), fp = P(work + loss);
-        const grad = hasData ? `background:linear-gradient(to top,#34c759 0 ${wp}%,#ffcc00 ${wp}% ${fp}%,transparent ${fp}% 100%);` : "";
+        const grad = hasData ? `background:linear-gradient(to top,var(--chart-work) 0 ${wp}%,var(--chart-loss) ${wp}% ${fp}%,transparent ${fp}% 100%);` : "";
         const parts = (lo.items || []).map((x) => `${x.cat} ${Math.round(x.dur)}'${x.rem ? " (" + x.rem + ")" : ""}`);
         const detail = `${j} · ${r} rit` + (parts.length ? " · " + parts.join(" · ") : (hasData ? "" : " · belum diisi"));
         return `<div class="ccell"><div class="jlbl">${j.slice(0, 2)}</div><div class="cbar ${now ? "now" : ""}" data-act="open-ritase" data-id="${l.id}" data-tip="${esc(detail)}"><div class="cbar-fill" style="${grad}"></div></div><div class="cnum">${r || ""}</div></div>`;
@@ -486,7 +486,7 @@
           ${nowJam ? kpi("Belum Diisi", belum, { hint: "Untuk jam " + nowJam, trend: { dir: belum > 0 ? "down" : "up", text: belum > 0 ? "perlu diisi" : "lengkap" } }) : kpi("Total Hauler", haulers.length, { hint: "Seluruh fleet" })}
         </div>
         <div class="papan-head"><span class="pt">Papan Shift ${esc(state.shift)}</span>${nowJam ? `<span class="live"><span class="bl"></span> ${nowJam}</span>` : ""}</div>
-        <div class="legend"><span><i style="background:#34c759"></i>Terisi</span><span><i style="background:#ffcc00"></i>Delay/Idle</span><span><i style="background:var(--surface-2);border:1px solid var(--border)"></i>Belum</span><span><i style="box-shadow:0 0 0 2px var(--warning) inset"></i>Jam ini</span></div>
+        <div class="legend"><span><i style="background:var(--chart-work)"></i>Terisi</span><span><i style="background:var(--chart-loss)"></i>Delay/Idle</span><span><i style="background:var(--surface-2);border:1px solid var(--border)"></i>Belum</span><span><i style="box-shadow:0 0 0 2px var(--warning) inset"></i>Jam ini</span></div>
         ${nowJam ? `<div style="margin:10px 0 4px"><button class="btn primary" data-act="report-now" data-jam="${nowJam}">Buat Laporan ${nowJam} →</button></div>` : ""}`;
     }
     const rows = loaders.length ? loaders.map((l) => `
@@ -1126,8 +1126,8 @@
     const maxV = Math.max(T.plan, T.actual, 1);
     const wf = `<div class="wf">
       <div class="wf-row"><span class="wf-l">Plan (MOHH)</span><span class="wf-b"><i style="width:${(T.plan / maxV) * 100}%;background:var(--muted)"></i></span><span class="wf-v">${R1(T.plan)}</span></div>
-      <div class="wf-row"><span class="wf-l">Time Loss</span><span class="wf-b"><i style="width:${(T.timeLoss / maxV) * 100}%;background:#ffcc00"></i></span><span class="wf-v gl-dn">−${R1(T.timeLoss)}</span></div>
-      <div class="wf-row"><span class="wf-l">Produktivitas</span><span class="wf-b"><i style="width:${(Math.abs(T.prodVar) / maxV) * 100}%;background:${T.prodVar >= 0 ? "#34c759" : "var(--danger)"}"></i></span><span class="wf-v ${cls(T.prodVar)}">${sign(T.prodVar)}</span></div>
+      <div class="wf-row"><span class="wf-l">Time Loss</span><span class="wf-b"><i style="width:${(T.timeLoss / maxV) * 100}%;background:var(--chart-loss)"></i></span><span class="wf-v gl-dn">−${R1(T.timeLoss)}</span></div>
+      <div class="wf-row"><span class="wf-l">Produktivitas</span><span class="wf-b"><i style="width:${(Math.abs(T.prodVar) / maxV) * 100}%;background:${T.prodVar >= 0 ? "var(--chart-work)" : "var(--danger)"}"></i></span><span class="wf-v ${cls(T.prodVar)}">${sign(T.prodVar)}</span></div>
       <div class="wf-row"><span class="wf-l">Actual</span><span class="wf-b"><i style="width:${(T.actual / maxV) * 100}%;background:var(--primary)"></i></span><span class="wf-v">${R1(T.actual)}</span></div>
     </div>`;
     app.innerHTML = `${appbar({ crumb: "Gain & Loss" })}<div class="container">

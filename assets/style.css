@@ -15,6 +15,9 @@
   --success:#16a34a; --success-soft:#f0fdf4;
   --danger:#dc2626;  --danger-soft:#fef2f2;
   --warning:#ca8a04; --warning-soft:#fefce8;
+  /* warna grafik/bar — satu keluarga dengan palet netral */
+  --chart-work:#16a34a;  /* jam produktif */
+  --chart-loss:#f59e0b;  /* delay / idle / breakdown */
   --radius:14px; --radius-sm:10px; --radius-xs:8px; --pill:9999px;
   --shadow:0 0 0 1px rgba(10,10,10,.07);
   --shadow-md:0 1px 2px rgba(10,10,10,.05), 0 0 0 1px rgba(10,10,10,.07);
@@ -30,6 +33,7 @@
   --text:#fafafa; --muted:#a3a3a3; --faint:#737373; --border:#2a2a2a; --border-2:#404040;
   --primary:#fafafa; --primary-2:#e5e5e5; --primary-fg:#171717; --accent-soft:#262626; --ring:#525252;
   --success:#4ade80; --success-soft:#0d2818; --danger:#f87171; --danger-soft:#2a1214; --warning:#facc15; --warning-soft:#2a2410;
+  --chart-work:#4ade80; --chart-loss:#fbbf24;
   --shadow:0 0 0 1px rgba(255,255,255,.09);
   --shadow-md:0 1px 2px rgba(0,0,0,.4), 0 0 0 1px rgba(255,255,255,.09);
   --shadow-float:0 10px 30px -10px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.11);
@@ -39,6 +43,7 @@
   --text:#fafafa; --muted:#a3a3a3; --faint:#737373; --border:#2a2a2a; --border-2:#404040;
   --primary:#fafafa; --primary-2:#e5e5e5; --primary-fg:#171717; --accent-soft:#262626; --ring:#525252;
   --success:#4ade80; --success-soft:#0d2818; --danger:#f87171; --danger-soft:#2a1214; --warning:#facc15; --warning-soft:#2a2410;
+  --chart-work:#4ade80; --chart-loss:#fbbf24;
   --shadow:0 0 0 1px rgba(255,255,255,.09);
   --shadow-md:0 1px 2px rgba(0,0,0,.4), 0 0 0 1px rgba(255,255,255,.09);
   --shadow-float:0 10px 30px -10px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.11);
