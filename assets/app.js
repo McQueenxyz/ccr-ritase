@@ -4,7 +4,7 @@
 (function () {
   const CFG = window.APP_CONFIG;
   const app = document.getElementById("app");
-  const state = { user: null, master: null, tanggal: todayISO(), shift: "1", detailTab: "fleet" };
+  const state = { user: null, master: null, tanggal: todayISO(), shift: "1", detailTab: "fleet", navOpen: {} };
 
   /* ---------- util ---------- */
   function todayISO() { const d = new Date(); const p = (n) => String(n).padStart(2, "0"); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; }
@@ -120,6 +120,8 @@
       el = document.createElement("aside"); el.id = "sidebar"; el.className = "sidebar";
       document.body.appendChild(el);
       el.addEventListener("click", (e) => {
+        const g = e.target.closest("[data-grp]");
+        if (g) { const k = g.getAttribute("data-grp"); state.navOpen[k] = !g.parentNode.classList.contains("open"); g.parentNode.classList.toggle("open"); g.setAttribute("aria-expanded", g.parentNode.classList.contains("open")); return; }
         const lo = e.target.closest('[data-act="logout"]');
         if (lo) { confirmModal("Keluar dari akun CCR?", async () => { await Store.signOut(); state.user = null; state.master = null; closeDrawer(); route(); }, "Ya, keluar"); return; }
         const nav = e.target.closest("[data-to]");
@@ -287,23 +289,29 @@
   function drawerItems() {
     const h = location.hash || "#/";
     const isHome = (h === "#/" || h === "" || h === "#");
-    const it = (to, ic, label, act) => `<div class="nav-item ${(act ? false : (to === "#/" ? isHome : h.startsWith(to))) ? "active" : ""}" data-to="${to || ""}">${icon(ic, 20)}<span>${label}</span></div>`;
+    // Menu minimalis: tanpa ikon, hanya teks
+    const it = (to, label) => `<div class="nav-item ${(to === "#/" ? isHome : h.startsWith(to)) ? "active" : ""}" data-to="${to}">${label}</div>`;
+    // Grup dropdown (Unit / Delay) — terbuka otomatis bila halaman aktif ada di dalamnya
+    const grp = (key, label, subs) => {
+      const aktif = subs.some((s) => h.startsWith(s[0]));
+      const buka = aktif || !!state.navOpen[key];
+      return `<div class="nav-grp ${buka ? "open" : ""}">
+        <div class="nav-gh" data-grp="${key}" role="button" tabindex="0" aria-expanded="${buka}">${label}</div>
+        <div class="nav-subs"><div>${subs.map((s) => `<div class="nav-sub ${h === s[0] ? "active" : ""}" data-to="${s[0]}">${s[1]}</div>`).join("")}</div></div>
+      </div>`;
+    };
     return `
-      ${it("#/", "grid", "Dashboard")}
-      ${it("#/form", "dumptruck", "Form Ritase")}
-      ${it("#/produksi", "grid", "Laporan Produksi")}
-      ${it("#/gainloss", "box", "Gain & Loss")}
-      ${it("#/import", "download", "Import Data")}
-      <div class="nav-grp"><div class="nav-gh">${icon("truck", 18)}<span>Unit</span></div>
-        <div class="nav-sub" data-to="#/unit">Daftar Populasi Unit</div>
-        <div class="nav-sub" data-to="#/unit/add">Tambah Unit</div></div>
-      <div class="nav-grp"><div class="nav-gh">${icon("alert", 18)}<span>Delay</span></div>
-        <div class="nav-sub" data-to="#/delay">Daftar Delay</div>
-        <div class="nav-sub" data-to="#/delay/add">Tambah Delay</div></div>
-      ${it("#/account", "person", "Account")}
-      ${it("#/setting", "settings", "Setting")}
+      ${it("#/", "Dashboard")}
+      ${it("#/form", "Form Ritase")}
+      ${it("#/produksi", "Laporan Produksi")}
+      ${it("#/gainloss", "Gain & Loss")}
+      ${it("#/import", "Import Data")}
+      ${grp("unit", "Unit", [["#/unit", "Daftar Populasi Unit"], ["#/unit/add", "Tambah Unit"]])}
+      ${grp("delay", "Delay", [["#/delay", "Daftar Delay"], ["#/delay/add", "Tambah Delay"]])}
+      ${it("#/account", "Account")}
+      ${it("#/setting", "Setting")}
       <div class="nav-sep"></div>
-      <div class="nav-item danger" data-act="logout">${icon("logout", 20)}<span>Logout</span></div>`;
+      <div class="nav-item danger" data-act="logout">Logout</div>`;
   }
   function openDrawer() {
     let d = document.getElementById("drawer");
@@ -312,6 +320,8 @@
     requestAnimationFrame(() => d.classList.add("open"));
     d.onclick = (e) => {
       if (e.target === d || e.target.closest('[data-act="drawer-close"]')) return closeDrawer();
+      const g = e.target.closest("[data-grp]");
+      if (g) { const k = g.getAttribute("data-grp"); state.navOpen[k] = !g.parentNode.classList.contains("open"); g.parentNode.classList.toggle("open"); g.setAttribute("aria-expanded", g.parentNode.classList.contains("open")); return; }
       const lo = e.target.closest('[data-act="logout"]');
       if (lo) { closeDrawer(); confirmModal("Keluar dari akun CCR?", async () => { await Store.signOut(); state.user = null; state.master = null; closeDrawer(); route(); }, "Ya, keluar"); return; }
       const nav = e.target.closest("[data-to]");
