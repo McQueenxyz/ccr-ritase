@@ -93,13 +93,8 @@ h1,h2,h3{margin:0; font-weight:600; letter-spacing:-.01em; line-height:1.25;}
 .nav-gh::after{content:""; width:6px; height:6px; margin-right:3px; border-right:1.5px solid var(--faint); border-bottom:1.5px solid var(--faint);
   transform:rotate(-45deg); transition:transform .18s var(--ease); flex:none;}
 .nav-grp.open>.nav-gh::after{transform:rotate(45deg);}
-/* Buka/tutup sub-menu.
-   Sebelumnya memakai trik grid 0fr->1fr, tetapi di desktop `1fr` membagi
-   ruang kosong yang bernilai 0 sehingga trek tetap 0px dan sub-menu tidak
-   pernah terlihat. max-height selalu terhitung benar di semua lebar layar. */
-.nav-subs{overflow:hidden; max-height:0; opacity:0;
-  transition:max-height .22s var(--ease), opacity .16s var(--ease);}
-.nav-grp.open>.nav-subs{max-height:340px; opacity:1;}
+.nav-subs{display:grid; grid-template-rows:0fr; overflow:hidden; transition:grid-template-rows .2s var(--ease);}
+.nav-grp.open>.nav-subs{grid-template-rows:1fr;}
 .nav-subs>*{min-height:0;}
 .nav-sub{padding:6px 10px 6px 22px; margin-top:1px; border-radius:var(--radius-xs); cursor:pointer; font-size:13.5px;
   color:var(--muted); transition:background .12s var(--ease);}
