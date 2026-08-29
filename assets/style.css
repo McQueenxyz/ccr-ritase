@@ -550,3 +550,50 @@ tr.foot td.sticky-col{z-index:3;}
 @media (max-width:640px){.foot-nav{grid-template-columns:repeat(2,1fr);}}
 
 @media (prefers-reduced-motion:reduce){*{animation-duration:.001ms !important; transition:none !important;}}
+
+/* ============ PAPAN JAM ============
+   Layar isi-cepat satu jam untuk seluruh loader. Dipakai sambil menerima
+   laporan operator lewat radio, jadi target klik besar dan fokus jelas. */
+.pj-jamnav{display:flex; align-items:center; gap:6px;}
+.pj-jamnav .btn{padding:0 12px; min-width:38px; font-size:18px; line-height:1;}
+.pj-jamnav select{flex:1; min-width:96px;}
+
+.pj-radio{background:var(--surface); border-radius:var(--radius); box-shadow:var(--shadow);
+  padding:16px 18px; margin-bottom:16px;}
+.pj-radio label{display:block; font-size:12px; font-weight:600; letter-spacing:.04em;
+  text-transform:uppercase; color:var(--muted); margin-bottom:8px;}
+.pj-radio input{width:100%; font-size:22px; font-weight:600; letter-spacing:.02em;
+  padding:12px 14px; border-radius:var(--radius-xs); border:none;
+  background:var(--surface-2); color:var(--text); box-shadow:0 0 0 1px var(--border) inset;}
+.pj-radio input:focus{outline:none; box-shadow:0 0 0 2px var(--ring) inset;}
+.pj-hint{margin-top:8px; font-size:13px; color:var(--faint); min-height:18px;}
+.pj-hint.ok{color:var(--chart-work); font-weight:500;}
+.pj-hint.bad{color:var(--danger); font-weight:500;}
+
+.pj-stat{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px;}
+.pj-stat>div{flex:1; min-width:120px; background:var(--surface); border-radius:var(--radius);
+  box-shadow:var(--shadow); padding:14px 16px; display:flex; flex-direction:column; gap:2px;}
+.pj-stat .v{font-size:26px; font-weight:650; letter-spacing:-.02em; font-variant-numeric:tabular-nums;}
+.pj-stat .k{font-size:12.5px; color:var(--muted);}
+
+.pj-list{display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:12px;}
+.pj-grup{background:var(--surface); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden;}
+.pj-gh{display:flex; align-items:center; gap:10px; padding:11px 14px; border-bottom:1px solid var(--border);}
+.pj-ld{font-weight:650; font-size:15px; letter-spacing:-.01em;}
+.pj-pit{font-size:12.5px; color:var(--muted); flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.pj-sub{font-size:13px; font-weight:600; color:var(--muted); font-variant-numeric:tabular-nums;
+  background:var(--surface-2); border-radius:999px; padding:2px 10px; flex:none;}
+.pj-grup.isi .pj-sub{background:var(--chart-work); color:#fff;}
+
+.pj-tab{width:100%; border-collapse:collapse;}
+.pj-tab td{padding:6px 14px; border-bottom:1px solid var(--border); font-size:14px;}
+.pj-tab tr:last-child td{border-bottom:none;}
+.pj-hl{font-weight:500; white-space:nowrap;}
+.pj-mt{color:var(--muted); font-size:12.5px;}
+.pj-kosong{color:var(--faint); font-size:13px; text-align:center; padding:14px;}
+.pj-in{width:74px; text-align:right; font-size:16px; font-weight:600; padding:7px 10px;
+  border:none; border-radius:var(--radius-xs); background:var(--surface-2); color:var(--text);
+  box-shadow:0 0 0 1px var(--border) inset; font-variant-numeric:tabular-nums;}
+.pj-in:focus{outline:none; box-shadow:0 0 0 2px var(--ring) inset; background:var(--surface);}
+.pj-in::-webkit-outer-spin-button,.pj-in::-webkit-inner-spin-button{-webkit-appearance:none; margin:0;}
+.pj-in[type=number]{-moz-appearance:textfield;}

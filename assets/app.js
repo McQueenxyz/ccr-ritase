@@ -4,7 +4,7 @@
 (function () {
   const CFG = window.APP_CONFIG;
   const app = document.getElementById("app");
-  const state = { user: null, master: null, tanggal: todayISO(), shift: "1", detailTab: "fleet", navOpen: {} };
+  const state = { user: null, master: null, tanggal: todayISO(), shift: "1", jam: null, detailTab: "fleet", navOpen: {} };
 
   /* ---------- util ---------- */
   function todayISO() { const d = new Date(); const p = (n) => String(n).padStart(2, "0"); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; }
@@ -171,6 +171,7 @@
     if (h.startsWith("#/import")) return renderImport();
     if (h.startsWith("#/setting")) return renderSetting();
     if (h.startsWith("#/account")) return renderAccount();
+    if (h.startsWith("#/jam")) return renderPapanJam();
     if (h.startsWith("#/form")) return renderLoaders();
     return renderDashboard();
   }
@@ -302,6 +303,7 @@
     };
     return `
       ${it("#/", "Dashboard")}
+      ${it("#/jam", "Papan Jam")}
       ${it("#/form", "Form Ritase")}
       ${it("#/produksi", "Laporan Produksi")}
       ${it("#/gainloss", "Gain & Loss")}
@@ -447,6 +449,169 @@
     };
   }
 
+  /* ---------- PAPAN JAM ----------
+     Satu layar untuk satu jam: seluruh loader beserta haulernya, tanpa berpindah
+     halaman. Dirancang untuk mengetik sambil menerima laporan operator lewat
+     radio rig — urutan panggilan tidak tentu, jadi ada baris isi-cepat yang
+     menerima "lambung + jumlah rit". */
+  function pjPesan(teks, ok) {
+    const el = document.getElementById("pj-pesan");
+    if (!el) return;
+    el.textContent = teks;
+    el.className = "pj-hint" + (ok === true ? " ok" : ok === false ? " bad" : "");
+  }
+  function pjRecalc() {
+    let rit = 0, bcm = 0;
+    const subOf = {};
+    document.querySelectorAll(".pj-in").forEach((inp) => {
+      const v = num(inp.value), lid = inp.dataset.lid;
+      subOf[lid] = (subOf[lid] || 0) + v;
+      rit += v;
+      bcm += v * num(inp.dataset.f);
+    });
+    document.querySelectorAll(".pj-sub").forEach((el) => { el.textContent = subOf[el.dataset.lid] || 0; });
+    let blm = 0;
+    document.querySelectorAll(".pj-grup").forEach((g) => {
+      const ada = (subOf[g.dataset.lid] || 0) > 0;
+      g.classList.toggle("isi", ada);
+      if (!ada) blm++;
+    });
+    const setT = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    setT("pj-rit", rit);
+    setT("pj-bcm", Math.round(bcm).toLocaleString("id-ID"));
+    setT("pj-blm", blm);
+  }
+  // "227 5" -> hauler berakhiran 227 diisi 5 rit untuk jam yang sedang aktif
+  async function pjIsiCepat(teks) {
+    const t = String(teks == null ? "" : teks).trim();
+    if (!t) return { ok: false, pesan: "Ketik lambung lalu jumlah rit, contoh: 227 5" };
+    const bagian = t.split(/\s+/);
+    if (bagian.length < 2) return { ok: false, pesan: "Perlu dua bagian: lambung dan jumlah rit, contoh: 227 5" };
+    const ritTeks = bagian[bagian.length - 1];
+    if (!/^\d+$/.test(ritTeks)) return { ok: false, pesan: `"${ritTeks}" bukan jumlah rit yang sah` };
+    const kunci = onlyDigits(bagian.slice(0, -1).join(""));
+    if (kunci.length < 3) return { ok: false, pesan: "Ketik minimal 3 angka terakhir lambung" };
+    const namaOf = (inp) => {
+      const tr = inp.closest("tr"), sel = tr && tr.querySelector(".pj-hl");
+      return sel ? sel.textContent.trim() : "";
+    };
+    const cocok = [].slice.call(document.querySelectorAll(".pj-in"))
+      .filter((inp) => onlyDigits(namaOf(inp)).endsWith(kunci));
+    if (!cocok.length) return { ok: false, pesan: `Tidak ada hauler berakhiran ${kunci} di shift ini` };
+    if (cocok.length > 1) {
+      return { ok: false, pesan: `${kunci} cocok untuk ${cocok.map(namaOf).join(", ")}. Ketik lebih banyak angka.` };
+    }
+    const inp = cocok[0];
+    inp.value = ritTeks;
+    await Store.setRit(inp.dataset.hid, inp.dataset.jam, ritTeks);
+    if (typeof inp.scrollIntoView === "function") { try { inp.scrollIntoView({ block: "nearest" }); } catch (_) { /* jsdom */ } }
+    return { ok: true, pesan: `${namaOf(inp)} → ${ritTeks} rit pada jam ${state.jam}` };
+  }
+
+  async function renderPapanJam() {
+    const { loaders, haulers } = await Store.listAll(state.tanggal, state.shift);
+    const jams = jamListFor(state.shift);
+    const njRaw = String(new Date().getHours()).padStart(2, "0") + ".00";
+    if (!state.jam || jams.indexOf(state.jam) < 0) {
+      state.jam = (state.tanggal === todayISO() && jams.indexOf(njRaw) >= 0) ? njRaw : jams[0];
+    }
+    const jam = state.jam, idx = jams.indexOf(jam);
+    const hOf = {};
+    haulers.forEach((h) => { (hOf[h.loader_id] = hOf[h.loader_id] || []).push(h); });
+
+    const grup = loaders.map((l) => {
+      const hs = hOf[l.id] || [];
+      const sub = hs.reduce((a, h) => a + num((h.rit || {})[jam]), 0);
+      const rows = hs.length ? hs.map((h) => `<tr>
+            <td class="pj-hl">${esc(h.hauler)}</td>
+            <td class="pj-mt">${esc(h.material)}</td>
+            <td class="num"><input class="pj-in" type="number" inputmode="numeric" min="0" step="1"
+              data-hid="${h.id}" data-jam="${jam}" data-lid="${l.id}" data-f="${bcmPerRit(l.loader, h.material)}"
+              value="${esc((h.rit && h.rit[jam] != null) ? h.rit[jam] : "")}"></td>
+          </tr>`).join("")
+        : `<tr><td colspan="3" class="pj-kosong">Belum ada hauler untuk loader ini.</td></tr>`;
+      return `<div class="pj-grup" data-lid="${l.id}">
+          <div class="pj-gh">
+            <span class="pj-ld">${esc(l.loader)}</span>
+            <span class="pj-pit">${esc(l.pit || "—")}</span>
+            <span class="pj-sub" data-lid="${l.id}">${sub}</span>
+          </div>
+          <table class="pj-tab"><tbody>${rows}</tbody></table>
+        </div>`;
+    }).join("");
+
+    const shiftOpts = state.master.shifts.map((s) => `<option value="${s.kode}" ${s.kode === state.shift ? "selected" : ""}>${esc(s.label)}</option>`).join("");
+    const jamOpts = jams.map((j) => `<option value="${j}" ${j === jam ? "selected" : ""}>${esc(j)}</option>`).join("");
+
+    app.innerHTML = `${appbar({ back: true, menu: true, crumb: "Papan Jam" })}<div class="container">
+      ${pageHead("Papan Jam", "Isi ritase satu jam untuk seluruh loader sekaligus — tanpa berpindah halaman.")}
+      <div class="toolbar">
+        <div><label>Tanggal</label><input type="date" id="pj-tgl" value="${state.tanggal}"></div>
+        <div><label>Shift</label><select id="pj-shift">${shiftOpts}</select></div>
+        <div class="grow"><label>Jam</label>
+          <div class="pj-jamnav">
+            <button class="btn" id="pj-prev" ${idx <= 0 ? "disabled" : ""} aria-label="Jam sebelumnya">‹</button>
+            <select id="pj-jam">${jamOpts}</select>
+            <button class="btn" id="pj-next" ${idx >= jams.length - 1 ? "disabled" : ""} aria-label="Jam berikutnya">›</button>
+          </div>
+        </div>
+      </div>
+      ${loaders.length ? `
+      <div class="pj-radio">
+        <label for="pj-cepat">Isi cepat dari radio</label>
+        <input id="pj-cepat" type="text" autocomplete="off" spellcheck="false" placeholder="227 5">
+        <div class="pj-hint" id="pj-pesan">Ketik 3–4 angka terakhir lambung, spasi, jumlah rit. Enter untuk simpan.</div>
+      </div>
+      <div class="pj-stat">
+        <div><span class="v" id="pj-rit">0</span><span class="k">rit jam ${esc(jam)}</span></div>
+        <div><span class="v" id="pj-bcm">0</span><span class="k">BCM</span></div>
+        <div><span class="v" id="pj-blm">0</span><span class="k">loader belum diisi</span></div>
+      </div>
+      <div class="pj-list">${grup}</div>`
+      : `<div class="empty">Belum ada loader untuk tanggal &amp; shift ini.<br/>Tambahkan dulu di <b>Form Ritase</b>.</div>`}
+    </div>`;
+
+    document.getElementById("pj-tgl").onchange = (e) => { state.tanggal = e.target.value; renderPapanJam(); };
+    document.getElementById("pj-shift").onchange = (e) => { state.shift = e.target.value; state.jam = null; renderPapanJam(); };
+    const selJam = document.getElementById("pj-jam");
+    if (selJam) selJam.onchange = (e) => { state.jam = e.target.value; renderPapanJam(); };
+    const bp = document.getElementById("pj-prev"), bn = document.getElementById("pj-next");
+    if (bp) bp.onclick = () => { if (idx > 0) { state.jam = jams[idx - 1]; renderPapanJam(); } };
+    if (bn) bn.onclick = () => { if (idx < jams.length - 1) { state.jam = jams[idx + 1]; renderPapanJam(); } };
+    if (!loaders.length) return;
+
+    pjRecalc();
+    const list = document.querySelector(".pj-list");
+    list.addEventListener("input", (e) => { if (e.target.classList.contains("pj-in")) pjRecalc(); });
+    list.addEventListener("change", async (e) => {
+      if (!e.target.classList.contains("pj-in")) return;
+      await Store.setRit(e.target.dataset.hid, e.target.dataset.jam, e.target.value);
+      pjRecalc();
+    });
+    list.addEventListener("keydown", async (e) => {
+      const t = e.target;
+      if (!t.classList || !t.classList.contains("pj-in")) return;
+      const arah = (e.key === "Enter" || e.key === "ArrowDown") ? 1 : e.key === "ArrowUp" ? -1 : 0;
+      if (!arah) return;
+      e.preventDefault();
+      await Store.setRit(t.dataset.hid, t.dataset.jam, t.value);
+      pjRecalc();
+      const all = [].slice.call(document.querySelectorAll(".pj-in"));
+      const n = all[all.indexOf(t) + arah];
+      if (n) { n.focus(); if (n.select) n.select(); }
+    });
+
+    const cepat = document.getElementById("pj-cepat");
+    cepat.addEventListener("keydown", async (e) => {
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      const hasil = await pjIsiCepat(cepat.value);
+      pjPesan(hasil.pesan, hasil.ok);
+      if (hasil.ok) { cepat.value = ""; pjRecalc(); }
+    });
+    cepat.focus();
+  }
+
   /* ---------- LOADER LIST ---------- */
   async function renderLoaders() {
     const { loaders, haulers, losses } = await Store.listAll(state.tanggal, state.shift);
@@ -499,7 +664,7 @@
       papan = `${nowJam && belum > 0 ? `<div class="banner">
           <span class="bic">${icon("rocket", 22)}</span>
           <div class="btxt"><div class="t">Jam ${nowJam} — waktunya laporan per jam</div><div class="d">${belum} loader belum diisi untuk jam ini.</div></div>
-          <button class="bcta" data-act="report-now" data-jam="${nowJam}">Buat laporan ${icon("next", 15)}</button>
+          <button class="bcta" data-act="isi-jam" data-jam="${nowJam}">Isi jam ini ${icon("next", 15)}</button>
         </div>` : ""}
         <div class="summary">
           ${kpi("Loader Aktif", loaders.length, { hint: "Unit terdaftar shift ini" })}
@@ -1734,6 +1899,7 @@
       case "del-loader": confirmModal("Hapus loader ini beserta semua hauler & loss-nya?", async () => { await Store.deleteLoader(id); toast("Loader dihapus"); renderLoaders(); }); break;
       case "open-loader": state.detailTab = "fleet"; location.hash = "#/loader/detail/" + id; break;
       case "open-ritase": state.detailTab = "ritase"; location.hash = "#/loader/detail/" + id; break;
+      case "isi-jam": state.jam = el.getAttribute("data-jam"); location.hash = "#/jam"; break;
       case "report-now": state.__reportJam = el.getAttribute("data-jam"); location.hash = "#/report"; break;
       case "dup-loader": { const src = await Store.getLoader(id); loaderModal({ ...src, id: null, loader: "" }); break; }
       // hauler
