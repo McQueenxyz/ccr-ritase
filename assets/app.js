@@ -635,7 +635,16 @@
           <button class="btn primary btn-ic" data-act="wa-report">${icon("whatsapp", 18)} Salin &amp; buka WhatsApp</button>
           <button class="btn btn-ic" data-act="copy-report">${icon("copy", 18)} Salin saja</button>
         </div>
-        <div class="hint">Laporan mencakup <b>semua loader</b> pada ${esc(fmtID(l.tanggal))} shift ${esc(l.shift)}.</div>`)}
+        <div class="hint">Laporan mencakup <b>semua loader</b> pada ${esc(fmtID(l.tanggal))} shift ${esc(l.shift)}.</div>
+        <div class="dl-group">
+          <div class="dl-title">Unduh Laporan</div>
+          <div class="dl-desc">Data ${esc(fmtID(l.tanggal))} shift ${esc(l.shift)} — semua loader.</div>
+          <div class="dl-btns">
+            <button class="btn btn-ic" data-act="ss6-hpr-export">${icon("download", 16)} SS6 — HPR <span class="dl-ext">.xlsx</span></button>
+            <button class="btn btn-ic" data-act="ss6-ore-export">${icon("download", 16)} SS6 — ORE <span class="dl-ext">.xlsx</span></button>
+            <button class="btn btn-ic" data-act="csv-export">${icon("download", 16)} Ritase <span class="dl-ext">.csv</span></button>
+          </div>
+        </div>`)}
     </div>`;
     bindGrid(loaderId);
   }

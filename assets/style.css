@@ -405,6 +405,13 @@ tr.foot td.sticky-col{z-index:3;}
 .wf-v{text-align:right; font-weight:500; font-size:13.5px;}
 @media (max-width:600px){.wf-row{grid-template-columns:92px 1fr 76px; gap:8px;}}
 
+/* Kelompok tombol unduh laporan */
+.dl-group{margin-top:18px; padding-top:16px; border-top:1px solid var(--border);}
+.dl-title{font-size:14px; font-weight:500;}
+.dl-desc{font-size:13px; color:var(--muted); margin-top:2px;}
+.dl-btns{display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;}
+.dl-ext{font-size:11.5px; color:var(--muted); font-weight:400;}
+
 /* ---------------- Dropzone unggah file ---------------- */
 .dropzone{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
   padding:40px 24px; border:1.5px dashed var(--border-2); border-radius:var(--radius); cursor:pointer;
