@@ -30,10 +30,23 @@ window.APP_CONFIG = {
 
   // Model tiap loader (Exca) + target produksi per shift per model.
   // Jika BCM shift loader >= target → target tercapai (loss tak wajib diisi).
-  UNIT_MODEL: { E5416: "PC400", E5418: "PC400", E5422: "PC400", E5314: "PC300", E5312: "PC300", E5168: "PC200", E5167: "PC200", E5189: "PC200", E5157: "PC200" },
+  // Sumber: sheet "POP UNIT" (ekspor populasi SS6) + daftar populasi SS6 Agustus 2026.
+  // Excavator 45T -> PC400, 30T -> PC300, 20T -> PC200.
+  UNIT_MODEL: {
+    E5416: "PC400", E5418: "PC400", E5422: "PC400",
+    E5312: "PC300", E5313: "PC300", E5314: "PC300",
+    E5153: "PC200", E5154: "PC200", E5155: "PC200", E5156: "PC200",
+    E5157: "PC200", E5158: "PC200", E5159: "PC200", E5160: "PC200",
+    E5161: "PC200", E5166: "PC200", E5167: "PC200", E5168: "PC200",
+    E5169: "PC200", E5170: "PC200", E5171: "PC200", E5172: "PC200",
+    E5189: "PC200", // terverifikasi di populasi SS6: PC200-10M0CE, Excavator 20T
+  },
 
   // PLAN PRODUKTIVITAS (BCM/jam) — dasar hitung Gain & Loss (waterfall DPR).
   // ob = OB/Quarry, ore = Ore Getting/Hauling. Per unit (menimpa nilai model).
+  // BELUM TERVALIDASI. Sumber DPR Agustus 2026 menyebut dua versi berbeda
+  // (200/160/90 pada tabel per unit, 205/166/90 pada blok ringkasan) dan
+  // keduanya tidak cocok dengan angka di bawah. Menunggu berkas plan resmi.
   PLAN_PDTY_MODEL: { PC400: { ob: 200, ore: 334 }, PC300: { ob: 158, ore: 158 }, PC200: { ob: 70, ore: 70 } },
   PLAN_PDTY_UNIT: { E5314: { ore: 158 }, E5312: { ore: 210 }, E5422: { ore: 334 } },
 

@@ -41,6 +41,14 @@
     }
     return t.toUpperCase();
   }
+  /* Plan bulanan -> target per shift.
+     target shift = plan bulan / jumlah hari dalam bulan / 2 shift.
+     Rumus ini dicocokkan dengan dashboard SS6: plan Agustus 2026 "OB Removal + MUD"
+     214.417,5175 BCM / 31 hari / 2 = 3.458,347 — persis angka yang ditampilkan SS6. */
+  function hariDalamBulan(tgl) { const a = String(tgl).split("-"); return new Date(+a[0], +a[1], 0).getDate(); }
+  function planBulanan(tgl) { const pb = (state.master && state.master.plan_bulanan) || {}; return num(pb[String(tgl).slice(0, 7)]); }
+  function targetShift(tgl) { const v = planBulanan(tgl); return v > 0 ? v / hariDalamBulan(String(tgl).slice(0, 7) + "-01") / 2 : 0; }
+
   const jamListFor = (shift) => (String(shift) === "2" ? state.master.jam_shift2 : state.master.jam_shift1);
   function optionList(arr, sel) { return arr.map((v) => `<option value="${esc(v)}" ${v === sel ? "selected" : ""}>${esc(v)}</option>`).join(""); }
   function toast(msg) { let t = document.querySelector(".toast"); if (!t) { t = document.createElement("div"); t.className = "toast"; document.body.appendChild(t); } t.textContent = msg; t.classList.add("show"); clearTimeout(t._to); t._to = setTimeout(() => t.classList.remove("show"), 2200); }
@@ -358,6 +366,15 @@
       <div class="dstats">
         ${kpi("Total Ritase", fmtNum(totalRit), { hint: "Seluruh hauler pada shift ini" })}
         ${kpi("Total BCM", fmtNum(Math.round(totalBcm)), { hint: "Volume terangkut" })}
+        ${(() => {
+          const tgt = targetShift(state.tanggal);
+          if (!tgt) return kpi("Target Shift", "—", { hint: "Isi Plan Bulanan di Setting" });
+          const pct = tgt > 0 ? (totalBcm / tgt) * 100 : 0;
+          return kpi("Target Shift", fmtNum(Math.round(tgt)), {
+            hint: "Plan bulan ÷ hari ÷ 2 shift",
+            trend: { dir: pct >= 100 ? "up" : "down", text: pct.toFixed(1).replace(".", ",") + "%" },
+          });
+        })()}
         ${kpi("Jam Terlapor", hoursReported, { suffix: "/" + jams.length + " jam", trend: { dir: hoursReported >= jams.length ? "up" : "flat", text: Math.round((hoursReported / jams.length) * 100) + "%" } })}
       </div>
       <div class="card">
@@ -1621,6 +1638,21 @@
     app.innerHTML = `${appbar({ crumb: "Setting · Data Master" })}<div class="container">
       ${pageHead("Data Master", "Daftar pilihan yang muncul di seluruh formulir: pengawas, material, kode loss, dan lokasi.", `<button class="btn" data-act="reset-master">Kembalikan Default</button>`)}
 
+      <div class="card sect"><div class="sect-h"><span>Plan Bulanan (BCM)</span><span class="chip">${Object.keys(m.plan_bulanan || {}).length}</span></div><div class="sect-b">
+        <div class="hint" style="margin-bottom:10px">Target per shift dihitung otomatis: plan bulan ÷ jumlah hari ÷ 2 shift. Cukup diperbarui sekali tiap awal bulan.</div>
+        ${Object.keys(m.plan_bulanan || {}).length
+          ? `<div class="table-wrap"><table><thead><tr><th>Bulan</th><th class="num">Plan (BCM)</th><th class="num">Target / shift</th><th>Aksi</th></tr></thead><tbody>${Object.keys(m.plan_bulanan).sort().map((bl) => {
+              const t = num(m.plan_bulanan[bl]) / hariDalamBulan(bl + "-01") / 2;
+              return `<tr><td>${esc(bl)}</td><td class="num">${fmtNum(Math.round(num(m.plan_bulanan[bl])))}</td><td class="num">${fmtNum(Math.round(t))}</td><td class="actions"><button class="iconbtn" data-act="ms-del" data-kind="plan_bulanan" data-key="${esc(bl)}" title="Hapus">${icon("delete")}</button></td></tr>`;
+            }).join("")}</tbody></table></div>`
+          : `<div class="hint">Belum ada plan bulanan.</div>`}
+        <div class="ms-form row2">
+          <div><label>Bulan</label><input id="f-pb-bulan" type="month" /></div>
+          <div><label>Plan Produksi (BCM)</label><input id="f-pb-nilai" inputmode="decimal" placeholder="cth: 214417.5175" /></div>
+        </div>
+        <button class="btn primary sm" data-act="ms-add" data-kind="plan_bulanan">${icon("add", 16)} Simpan Plan Bulan</button>
+      </div></div>
+
       <div class="card sect"><div class="sect-h"><span>GL (Pengawas)</span><span class="chip">${pg.length}</span></div><div class="sect-b">
         ${pg.length ? `<div class="table-wrap"><table><thead><tr><th>Nama Pengawas</th><th>NRP</th><th>Aksi</th></tr></thead><tbody>${pg.map((p, i) => `<tr><td>${esc(p.nama)}</td><td>${esc(p.nrp)}</td><td class="actions"><button class="iconbtn" data-act="ms-del" data-kind="pengawas" data-i="${i}" title="Hapus">${icon("delete")}</button></td></tr>`).join("")}</tbody></table></div>` : `<div class="hint">Belum ada pengawas.</div>`}
         <div class="ms-form row2">
@@ -1689,7 +1721,13 @@
   async function msAdd(kind) {
     const m = state.master, $ = (id) => document.getElementById(id);
     const val = (id) => ($(id) ? $(id).value.trim() : "");
-    if (kind === "pengawas") {
+    if (kind === "plan_bulanan") {
+      const bulan = val("f-pb-bulan"), nilai = parseFloat(String(val("f-pb-nilai")).replace(",", "."));
+      if (!/^\d{4}-\d{2}$/.test(bulan)) { toast("Pilih bulannya dulu"); return; }
+      if (!(nilai > 0)) { toast("Plan produksi harus lebih dari 0"); return; }
+      m.plan_bulanan = m.plan_bulanan || {};
+      m.plan_bulanan[bulan] = nilai;
+    } else if (kind === "pengawas") {
       const nama = val("f-pg-nama"), nrp = val("f-pg-nrp");
       if (!nama || !nrp) { toast("Isi Nama Pengawas & NRP"); return; }
       m.pengawas = m.pengawas || [];
@@ -1714,7 +1752,8 @@
   }
   async function msDel(kind, i) {
     const m = state.master;
-    if (kind === "pengawas") { (m.pengawas || []).splice(i, 1); }
+    if (kind === "plan_bulanan") { if (m.plan_bulanan) delete m.plan_bulanan[i]; }
+    else if (kind === "pengawas") { (m.pengawas || []).splice(i, 1); }
     else if (kind === "problem" || kind === "idle" || kind === "delay") {
       const listKey = kind === "problem" ? "problems" : kind;
       const gone = (m[listKey] || [])[i]; (m[listKey] || []).splice(i, 1);
@@ -1939,7 +1978,7 @@
       case "wipe-all": confirmModal("HAPUS SEMUA data ritase, fleet, dan loss? Tindakan ini tidak bisa dibatalkan.", async () => { const n = await Store.clearAll(); renderImport(); notif("ok", "Semua data dihapus", `${fmtNum(n)} loader beserta fleet dan loss-nya dihapus. Data Master tetap utuh.`); }, "Ya, hapus semua"); break;
       case "prod-bulan": { const d = new Date(state.prodTo || todayISO()); const p = (n) => String(n).padStart(2, "0"); const y = d.getFullYear(), mo = d.getMonth(); state.prodFrom = `${y}-${p(mo + 1)}-01`; state.prodTo = `${y}-${p(mo + 1)}-${p(new Date(y, mo + 1, 0).getDate())}`; renderProduksi(); break; }
       case "ms-add": await msAdd(el.getAttribute("data-kind")); break;
-      case "ms-del": { const k = el.getAttribute("data-kind"), ix = +el.getAttribute("data-i"); confirmModal("Hapus item ini dari Data Master?", async () => { await msDel(k, ix); }); break; }
+      case "ms-del": { const k = el.getAttribute("data-kind"), kunci = el.getAttribute("data-key"), ix = +el.getAttribute("data-i"); confirmModal("Hapus item ini dari Data Master?", async () => { await msDel(k, kunci != null ? kunci : ix); }); break; }
       case "reset-master": confirmModal("Kembalikan data master ke default?", async () => { state.master = JSON.parse(JSON.stringify(window.SEED)); await Store.saveMaster(state.master); route(); }, "Ya, kembalikan"); break;
     }
   });

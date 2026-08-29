@@ -70,6 +70,13 @@ window.SEED = {
   ],
 
   // Jam untuk shift 1 dan shift 2
+  // Plan produksi bulanan (BCM). Target per shift diturunkan darinya:
+  //   target shift = plan bulan / jumlah hari dalam bulan / 2 shift
+  // Angka Agustus 2026 diambil dari sheet DPR_HO ("OB Removal + MUD",
+  // Plan Prod. 214.417,5175) dan cocok persis dengan target 3.458,347
+  // yang ditampilkan dashboard SS6.
+  plan_bulanan: { "2026-08": 214417.5175 },
+
   jam_shift1: ["07.00","08.00","09.00","10.00","11.00","12.00","13.00","14.00","15.00","16.00","17.00","18.00"],
   jam_shift2: ["19.00","20.00","21.00","22.00","23.00","00.00","01.00","02.00","03.00","04.00","05.00","06.00"],
 
