@@ -308,8 +308,7 @@
       ${it("#/import", "Import Data")}
       ${grp("unit", "Unit", [["#/unit", "Daftar Populasi Unit"], ["#/unit/add", "Tambah Unit"]])}
       ${grp("delay", "Delay", [["#/delay", "Daftar Delay"], ["#/delay/add", "Tambah Delay"]])}
-      ${it("#/account", "Account")}
-      ${it("#/setting", "Setting")}
+      ${grp("setting", "Setting", [["#/setting", "Data Master"], ["#/account", "Account"]])}
       <div class="nav-sep"></div>
       <div class="nav-item danger" data-act="logout">Logout</div>`;
   }
@@ -1454,7 +1453,7 @@
       ? `<div class="table-wrap"><table><thead><tr><th>Nama</th><th>Kode</th><th>Aksi</th></tr></thead><tbody>${arr.map((v, i) => `<tr><td>${esc(v)}</td><td>${esc(codeOf(kind, v)) || "—"}</td><td class="actions"><button class="iconbtn" data-act="ms-del" data-kind="${kind}" data-i="${i}" title="Hapus">${icon("delete")}</button></td></tr>`).join("")}</tbody></table></div>`
       : `<div class="hint">Belum ada data.</div>`;
     const pg = m.pengawas || [];
-    app.innerHTML = `${appbar({ crumb: "Setting" })}<div class="container">
+    app.innerHTML = `${appbar({ crumb: "Setting · Data Master" })}<div class="container">
       ${pageHead("Data Master", "Daftar pilihan yang muncul di seluruh formulir: pengawas, material, kode loss, dan lokasi.", `<button class="btn" data-act="reset-master">Kembalikan Default</button>`)}
 
       <div class="card sect"><div class="sect-h"><span>GL (Pengawas)</span><span class="chip">${pg.length}</span></div><div class="sect-b">
@@ -1562,8 +1561,8 @@
 
   /* ---------- ACCOUNT ---------- */
   function renderAccount() {
-    app.innerHTML = `${appbar({ crumb: "Account" })}<div class="container">
-      ${pageHead("Akun", "Informasi pengguna yang sedang masuk.")}
+    app.innerHTML = `${appbar({ crumb: "Setting · Account" })}<div class="container">
+      ${pageHead("Account", "Informasi pengguna yang sedang masuk dan mode penyimpanan data.")}
       <div class="card stack">
         <div><label>Nama</label><div style="font-size:17px;font-weight:600">${esc(state.user.nama)}</div></div>
         <div><label>NRP</label><div>${esc(state.user.nrp)}</div></div>
