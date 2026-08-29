@@ -311,8 +311,8 @@
     };
     return `
       ${it("#/", "Dashboard")}
-      ${it("#/jam", "Papan Jam")}
       ${it("#/form", "Form Ritase")}
+      ${it("#/jam", "Papan Jam")}
       ${it("#/produksi", "Laporan Produksi")}
       ${it("#/gainloss", "Gain & Loss")}
       ${it("#/import", "Import Data")}
@@ -561,7 +561,7 @@
     const jamOpts = jams.map((j) => `<option value="${j}" ${j === jam ? "selected" : ""}>${esc(j)}</option>`).join("");
 
     app.innerHTML = `${appbar({ back: true, menu: true, crumb: "Papan Jam" })}<div class="container">
-      ${pageHead("Papan Jam", "Isi ritase satu jam untuk seluruh loader sekaligus — tanpa berpindah halaman.")}
+      ${pageHead("Papan Jam", "Cara alternatif: satu jam untuk seluruh loader sekaligus. Alur utama tetap per loader di Form Ritase.", `<button class="btn" data-act="ke-form">Buka per loader</button>`)}
       <div class="toolbar">
         <div><label>Tanggal</label><input type="date" id="pj-tgl" value="${state.tanggal}"></div>
         <div><label>Shift</label><select id="pj-shift">${shiftOpts}</select></div>
@@ -681,7 +681,10 @@
       papan = `${nowJam && belum > 0 ? `<div class="banner">
           <span class="bic">${icon("rocket", 22)}</span>
           <div class="btxt"><div class="t">Jam ${nowJam} — waktunya laporan per jam</div><div class="d">${belum} loader belum diisi untuk jam ini.</div></div>
-          <button class="bcta" data-act="isi-jam" data-jam="${nowJam}">Isi jam ini ${icon("next", 15)}</button>
+          <div class="bacts">
+            <button class="bcta" data-act="isi-loader">Isi jam ini ${icon("next", 15)}</button>
+            <button class="bsec" data-act="isi-jam" data-jam="${nowJam}">Papan Jam</button>
+          </div>
         </div>` : ""}
         <div class="summary">
           ${kpi("Loader Aktif", loaders.length, { hint: "Unit terdaftar shift ini" })}
@@ -899,6 +902,7 @@
       <div style="margin-top:14px; display:flex; align-items:center; gap:16px; flex-wrap:wrap">
         <span class="saved" id="save-ind"><span class="c">✓</span> Otomatis tersimpan</span>
         <button class="btn" data-act="tab" data-tab="loss">Lanjut ke Loss →</button>
+        <button class="btn" data-act="isi-jam">Papan Jam</button>
       </div>`;
   }
   function flashSaved() { const el = document.getElementById("save-ind"); if (!el) return; el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash"); }
@@ -1938,7 +1942,9 @@
       case "del-loader": confirmModal("Hapus loader ini beserta semua hauler & loss-nya?", async () => { await Store.deleteLoader(id); toast("Loader dihapus"); renderLoaders(); }); break;
       case "open-loader": state.detailTab = "fleet"; location.hash = "#/loader/detail/" + id; break;
       case "open-ritase": state.detailTab = "ritase"; location.hash = "#/loader/detail/" + id; break;
-      case "isi-jam": state.jam = el.getAttribute("data-jam"); location.hash = "#/jam"; break;
+      case "isi-loader": location.hash = "#/form"; break;
+      case "ke-form": location.hash = "#/form"; break;
+      case "isi-jam": { const j = el.getAttribute("data-jam"); if (j) state.jam = j; location.hash = "#/jam"; break; }
       case "report-now": state.__reportJam = el.getAttribute("data-jam"); location.hash = "#/report"; break;
       case "dup-loader": { const src = await Store.getLoader(id); loaderModal({ ...src, id: null, loader: "" }); break; }
       // hauler

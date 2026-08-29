@@ -597,3 +597,12 @@ tr.foot td.sticky-col{z-index:3;}
 .pj-in:focus{outline:none; box-shadow:0 0 0 2px var(--ring) inset; background:var(--surface);}
 .pj-in::-webkit-outer-spin-button,.pj-in::-webkit-inner-spin-button{-webkit-appearance:none; margin:0;}
 .pj-in[type=number]{-moz-appearance:textfield;}
+
+/* Spanduk jam: aksi utama (per loader) + jalan pintas ke Papan Jam */
+.bacts{display:flex; align-items:center; gap:8px; flex-wrap:wrap; flex:none;}
+.bsec{background:transparent; border:none; box-shadow:0 0 0 1px var(--border) inset;
+  color:var(--muted); font-size:13px; font-weight:500; padding:8px 13px;
+  border-radius:var(--radius-xs); cursor:pointer; font-family:inherit;
+  transition:background .12s var(--ease), color .12s var(--ease);}
+.bsec:hover{background:var(--surface-2); color:var(--text);}
+.bsec:focus-visible{outline:none; box-shadow:0 0 0 2px var(--ring) inset;}
