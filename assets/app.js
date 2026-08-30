@@ -4,7 +4,7 @@
 (function () {
   const CFG = window.APP_CONFIG;
   const app = document.getElementById("app");
-  const state = { user: null, master: null, tanggal: todayISO(), shift: "1", jam: null, detailTab: "fleet", navOpen: {} };
+  const state = { user: null, master: null, tanggal: todayISO(), shift: "1", jam: null, pjView: "grid", detailTab: "fleet", navOpen: {} };
 
   /* ---------- util ---------- */
   function todayISO() { const d = new Date(); const p = (n) => String(n).padStart(2, "0"); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; }
@@ -467,10 +467,11 @@
   }
 
   /* ---------- PAPAN JAM ----------
-     Satu layar untuk satu jam: seluruh loader beserta haulernya, tanpa berpindah
-     halaman. Dirancang untuk mengetik sambil menerima laporan operator lewat
-     radio rig — urutan panggilan tidak tentu, jadi ada baris isi-cepat yang
-     menerima "lambung + jumlah rit". */
+     Dua tampilan, keduanya memakai kotak .pj-in yang sama sehingga
+     penyimpanan, navigasi keyboard, dan isi cepat radio berlaku di dua-duanya:
+     · "grid" (utama)      — hauler × seluruh jam shift, seperti tab Ritase,
+                             tetapi mencakup semua loader sekaligus.
+     · "jam"  (alternatif) — satu kolom untuk jam terpilih saja. */
   function pjPesan(teks, ok) {
     const el = document.getElementById("pj-pesan");
     if (!el) return;
@@ -478,27 +479,47 @@
     el.className = "pj-hint" + (ok === true ? " ok" : ok === false ? " bad" : "");
   }
   function pjRecalc() {
-    let rit = 0, bcm = 0;
-    const subOf = {};
+    const jamAktif = state.jam;
+    const barisRit = {}, barisVol = {}, kolom = {}, subOf = {};
+    let ritJam = 0, bcmJam = 0, ritShift = 0;
     document.querySelectorAll(".pj-in").forEach((inp) => {
-      const v = num(inp.value), lid = inp.dataset.lid;
-      subOf[lid] = (subOf[lid] || 0) + v;
-      rit += v;
-      bcm += v * num(inp.dataset.f);
+      const v = num(inp.value), hid = inp.dataset.hid, lid = inp.dataset.lid, j = inp.dataset.jam;
+      barisRit[hid] = (barisRit[hid] || 0) + v;
+      barisVol[hid] = (barisVol[hid] || 0) + v * num(inp.dataset.f);
+      kolom[j] = (kolom[j] || 0) + v;
+      ritShift += v;
+      if (j === jamAktif) {
+        subOf[lid] = (subOf[lid] || 0) + v;
+        ritJam += v;
+        bcmJam += v * num(inp.dataset.f);
+      }
     });
+    document.querySelectorAll(".pj-rowrit").forEach((el) => { el.textContent = barisRit[el.dataset.hid] || 0; });
+    document.querySelectorAll(".pj-rowvol").forEach((el) => { el.textContent = Math.round(barisVol[el.dataset.hid] || 0); });
+    document.querySelectorAll(".pj-coltot").forEach((el) => { el.textContent = kolom[el.dataset.jam] || 0; });
     document.querySelectorAll(".pj-sub").forEach((el) => { el.textContent = subOf[el.dataset.lid] || 0; });
     let blm = 0;
-    document.querySelectorAll(".pj-grup").forEach((g) => {
-      const ada = (subOf[g.dataset.lid] || 0) > 0;
-      g.classList.toggle("isi", ada);
-      if (!ada) blm++;
-    });
+    const grup = document.querySelectorAll(".pj-grup");
+    if (grup.length) {
+      grup.forEach((g) => {
+        const ada = (subOf[g.dataset.lid] || 0) > 0;
+        g.classList.toggle("isi", ada);
+        if (!ada) blm++;
+      });
+    } else {
+      document.querySelectorAll(".pj-ghrow").forEach((tr) => {
+        const ada = (subOf[tr.dataset.lid] || 0) > 0;
+        tr.classList.toggle("isi", ada);
+        if (!ada) blm++;
+      });
+    }
     const setT = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-    setT("pj-rit", rit);
-    setT("pj-bcm", Math.round(bcm).toLocaleString("id-ID"));
+    setT("pj-rit", ritJam);
+    setT("pj-bcm", Math.round(bcmJam).toLocaleString("id-ID"));
     setT("pj-blm", blm);
+    setT("pj-shift", ritShift);
   }
-  // "227 5" -> hauler berakhiran 227 diisi 5 rit untuk jam yang sedang aktif
+  // "227 5" -> hauler berakhiran 227 diisi 5 rit pada jam yang sedang terpilih
   async function pjIsiCepat(teks) {
     const t = String(teks == null ? "" : teks).trim();
     if (!t) return { ok: false, pesan: "Ketik lambung lalu jumlah rit, contoh: 227 5" };
@@ -512,7 +533,9 @@
       const tr = inp.closest("tr"), sel = tr && tr.querySelector(".pj-hl");
       return sel ? sel.textContent.trim() : "";
     };
+    // hanya kotak pada jam terpilih — di tampilan grid satu hauler punya 12 kotak
     const cocok = [].slice.call(document.querySelectorAll(".pj-in"))
+      .filter((inp) => inp.dataset.jam === state.jam)
       .filter((inp) => onlyDigits(namaOf(inp)).endsWith(kunci));
     if (!cocok.length) return { ok: false, pesan: `Tidak ada hauler berakhiran ${kunci} di shift ini` };
     if (cocok.length > 1) {
@@ -532,80 +555,96 @@
     if (!state.jam || jams.indexOf(state.jam) < 0) {
       state.jam = (state.tanggal === todayISO() && jams.indexOf(njRaw) >= 0) ? njRaw : jams[0];
     }
-    const jam = state.jam, idx = jams.indexOf(jam);
+    if (state.pjView !== "jam") state.pjView = "grid";
+    const jam = state.jam, idx = jams.indexOf(jam), grid = state.pjView === "grid";
     const hOf = {};
     haulers.forEach((h) => { (hOf[h.loader_id] = hOf[h.loader_id] || []).push(h); });
 
-    const grup = loaders.map((l) => {
-      const hs = hOf[l.id] || [];
-      const sub = hs.reduce((a, h) => a + num((h.rit || {})[jam]), 0);
-      const rows = hs.length ? hs.map((h) => `<tr>
-            <td class="pj-hl">${esc(h.hauler)}</td>
-            <td class="pj-mt">${esc(h.material)}</td>
-            <td class="num"><input class="pj-in" type="number" inputmode="numeric" min="0" step="1"
-              data-hid="${h.id}" data-jam="${jam}" data-lid="${l.id}" data-f="${bcmPerRit(l.loader, h.material)}"
-              value="${esc((h.rit && h.rit[jam] != null) ? h.rit[jam] : "")}"></td>
-          </tr>`).join("")
-        : `<tr><td colspan="3" class="pj-kosong">Belum ada hauler untuk loader ini.</td></tr>`;
-      return `<div class="pj-grup" data-lid="${l.id}">
-          <div class="pj-gh">
-            <span class="pj-ld">${esc(l.loader)}</span>
-            <span class="pj-pit">${esc(l.pit || "—")}</span>
-            <span class="pj-sub" data-lid="${l.id}">${sub}</span>
-          </div>
-          <table class="pj-tab"><tbody>${rows}</tbody></table>
-        </div>`;
-    }).join("");
+    const kotak = (l, h, j) => `<input class="pj-in" type="number" inputmode="numeric" min="0" step="1" data-hid="${h.id}" data-jam="${j}" data-lid="${l.id}" data-f="${bcmPerRit(l.loader, h.material)}" value="${esc((h.rit && h.rit[j] != null) ? h.rit[j] : "")}">`;
+
+    let isi = "";
+    if (grid) {
+      const lebar = jams.length + 3;
+      const head = `<tr><th class="sticky-col">Hauler</th>${jams.map((j) => `<th class="num${j === jam ? " kini" : ""}">${esc(j.slice(0, 2))}</th>`).join("")}<th class="num">ΣRit</th><th class="num">ΣVol</th></tr>`;
+      const body = loaders.map((l) => {
+        const hs = hOf[l.id] || [];
+        const kepala = `<tr class="pj-ghrow" data-lid="${l.id}"><td class="sticky-col" colspan="${lebar}"><span class="pj-ld">${esc(l.loader)}</span> <span class="pj-pit">${esc(l.pit || "—")}</span></td></tr>`;
+        const baris = hs.length
+          ? hs.map((h) => `<tr><td class="sticky-col pj-hl" title="${esc(h.material)} → ${esc(h.disposal || "-")}">${esc(h.hauler)}</td>${jams.map((j) => `<td class="num${j === jam ? " kini" : ""}">${kotak(l, h, j)}</td>`).join("")}<td class="num pj-rowrit" data-hid="${h.id}">0</td><td class="num pj-rowvol" data-hid="${h.id}">0</td></tr>`).join("")
+          : `<tr><td class="pj-kosong" colspan="${lebar}">Belum ada hauler untuk loader ini.</td></tr>`;
+        return kepala + baris;
+      }).join("");
+      const foot = `<tr class="foot"><td class="sticky-col">TOTAL</td>${jams.map((j) => `<td class="num pj-coltot${j === jam ? " kini" : ""}" data-jam="${j}">0</td>`).join("")}<td class="num" id="pj-shift">0</td><td class="num"></td></tr>`;
+      isi = `<div class="table-wrap"><table class="grid pj-grid"><thead>${head}</thead><tbody>${body}</tbody><tfoot>${foot}</tfoot></table></div>`;
+    } else {
+      isi = `<div class="pj-list">${loaders.map((l) => {
+        const hs = hOf[l.id] || [];
+        const sub = hs.reduce((a, h) => a + num((h.rit || {})[jam]), 0);
+        const rows = hs.length
+          ? hs.map((h) => `<tr><td class="pj-hl">${esc(h.hauler)}</td><td class="pj-mt">${esc(h.material)}</td><td class="num">${kotak(l, h, jam)}</td></tr>`).join("")
+          : `<tr><td colspan="3" class="pj-kosong">Belum ada hauler untuk loader ini.</td></tr>`;
+        return `<div class="pj-grup" data-lid="${l.id}"><div class="pj-gh"><span class="pj-ld">${esc(l.loader)}</span><span class="pj-pit">${esc(l.pit || "—")}</span><span class="pj-sub" data-lid="${l.id}">${sub}</span></div><table class="pj-tab"><tbody>${rows}</tbody></table></div>`;
+      }).join("")}</div>`;
+    }
 
     const shiftOpts = state.master.shifts.map((s) => `<option value="${s.kode}" ${s.kode === state.shift ? "selected" : ""}>${esc(s.label)}</option>`).join("");
     const jamOpts = jams.map((j) => `<option value="${j}" ${j === jam ? "selected" : ""}>${esc(j)}</option>`).join("");
 
     app.innerHTML = `${appbar({ back: true, menu: true, crumb: "Papan Jam" })}<div class="container">
-      ${pageHead("Papan Jam", "Cara alternatif: satu jam untuk seluruh loader sekaligus. Alur utama tetap per loader di Form Ritase.", `<button class="btn" data-act="ke-form">Buka per loader</button>`)}
+      ${pageHead("Papan Jam", "Seluruh loader dalam satu layar. Alur utama tetap per loader di Form Ritase.", `<button class="btn" data-act="ke-form">Buka per loader</button>`)}
       <div class="toolbar">
         <div><label>Tanggal</label><input type="date" id="pj-tgl" value="${state.tanggal}"></div>
-        <div><label>Shift</label><select id="pj-shift">${shiftOpts}</select></div>
-        <div class="grow"><label>Jam</label>
+        <div><label>Shift</label><select id="pj-shift-sel">${shiftOpts}</select></div>
+        <div class="grow"><label>Jam ${grid ? "aktif (sasaran isi cepat)" : ""}</label>
           <div class="pj-jamnav">
             <button class="btn" id="pj-prev" ${idx <= 0 ? "disabled" : ""} aria-label="Jam sebelumnya">‹</button>
             <select id="pj-jam">${jamOpts}</select>
             <button class="btn" id="pj-next" ${idx >= jams.length - 1 ? "disabled" : ""} aria-label="Jam berikutnya">›</button>
           </div>
         </div>
+        <div><label>Tampilan</label>
+          <div class="pj-view">
+            <button class="pj-vbtn ${grid ? "aktif" : ""}" data-view="grid">Grid semua jam</button>
+            <button class="pj-vbtn ${grid ? "" : "aktif"}" data-view="jam">Satu jam</button>
+          </div>
+        </div>
       </div>
       ${loaders.length ? `
       <div class="pj-radio">
-        <label for="pj-cepat">Isi cepat dari radio</label>
+        <label for="pj-cepat">Isi cepat dari radio — jam ${esc(jam)}</label>
         <input id="pj-cepat" type="text" autocomplete="off" spellcheck="false" placeholder="227 5">
         <div class="pj-hint" id="pj-pesan">Ketik 3–4 angka terakhir lambung, spasi, jumlah rit. Enter untuk simpan.</div>
       </div>
       <div class="pj-stat">
         <div><span class="v" id="pj-rit">0</span><span class="k">rit jam ${esc(jam)}</span></div>
-        <div><span class="v" id="pj-bcm">0</span><span class="k">BCM</span></div>
+        <div><span class="v" id="pj-bcm">0</span><span class="k">BCM jam ini</span></div>
         <div><span class="v" id="pj-blm">0</span><span class="k">loader belum diisi</span></div>
       </div>
-      <div class="pj-list">${grup}</div>`
+      ${isi}`
       : `<div class="empty">Belum ada loader untuk tanggal &amp; shift ini.<br/>Tambahkan dulu di <b>Form Ritase</b>.</div>`}
     </div>`;
 
     document.getElementById("pj-tgl").onchange = (e) => { state.tanggal = e.target.value; renderPapanJam(); };
-    document.getElementById("pj-shift").onchange = (e) => { state.shift = e.target.value; state.jam = null; renderPapanJam(); };
+    document.getElementById("pj-shift-sel").onchange = (e) => { state.shift = e.target.value; state.jam = null; renderPapanJam(); };
     const selJam = document.getElementById("pj-jam");
     if (selJam) selJam.onchange = (e) => { state.jam = e.target.value; renderPapanJam(); };
     const bp = document.getElementById("pj-prev"), bn = document.getElementById("pj-next");
     if (bp) bp.onclick = () => { if (idx > 0) { state.jam = jams[idx - 1]; renderPapanJam(); } };
     if (bn) bn.onclick = () => { if (idx < jams.length - 1) { state.jam = jams[idx + 1]; renderPapanJam(); } };
+    document.querySelectorAll(".pj-vbtn").forEach((b) => {
+      b.onclick = () => { state.pjView = b.getAttribute("data-view"); renderPapanJam(); };
+    });
     if (!loaders.length) return;
 
     pjRecalc();
-    const list = document.querySelector(".pj-list");
-    list.addEventListener("input", (e) => { if (e.target.classList.contains("pj-in")) pjRecalc(); });
-    list.addEventListener("change", async (e) => {
+    const wadah = document.querySelector(".pj-grid") || document.querySelector(".pj-list");
+    wadah.addEventListener("input", (e) => { if (e.target.classList.contains("pj-in")) pjRecalc(); });
+    wadah.addEventListener("change", async (e) => {
       if (!e.target.classList.contains("pj-in")) return;
       await Store.setRit(e.target.dataset.hid, e.target.dataset.jam, e.target.value);
       pjRecalc();
     });
-    list.addEventListener("keydown", async (e) => {
+    wadah.addEventListener("keydown", async (e) => {
       const t = e.target;
       if (!t.classList || !t.classList.contains("pj-in")) return;
       const arah = (e.key === "Enter" || e.key === "ArrowDown") ? 1 : e.key === "ArrowUp" ? -1 : 0;
@@ -613,8 +652,9 @@
       e.preventDefault();
       await Store.setRit(t.dataset.hid, t.dataset.jam, t.value);
       pjRecalc();
-      const all = [].slice.call(document.querySelectorAll(".pj-in"));
-      const n = all[all.indexOf(t) + arah];
+      // bergerak dalam kolom jam yang sama — sesuai alur laporan radio per jam
+      const kolom = [].slice.call(document.querySelectorAll(".pj-in")).filter((i) => i.dataset.jam === t.dataset.jam);
+      const n = kolom[kolom.indexOf(t) + arah];
       if (n) { n.focus(); if (n.select) n.select(); }
     });
 

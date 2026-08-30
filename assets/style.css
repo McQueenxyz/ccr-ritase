@@ -606,3 +606,19 @@ tr.foot td.sticky-col{z-index:3;}
   transition:background .12s var(--ease), color .12s var(--ease);}
 .bsec:hover{background:var(--surface-2); color:var(--text);}
 .bsec:focus-visible{outline:none; box-shadow:0 0 0 2px var(--ring) inset;}
+
+/* Papan Jam — pemilih tampilan & penanda jam aktif pada grid */
+.pj-view{display:flex; gap:2px; background:var(--surface-2); padding:2px; border-radius:var(--radius-xs);}
+.pj-vbtn{border:none; background:transparent; color:var(--muted); font-family:inherit; font-size:13px;
+  font-weight:500; padding:7px 12px; border-radius:6px; cursor:pointer; white-space:nowrap;
+  transition:background .12s var(--ease), color .12s var(--ease);}
+.pj-vbtn:hover{color:var(--text);}
+.pj-vbtn.aktif{background:var(--surface); color:var(--text); box-shadow:var(--shadow);}
+.pj-vbtn:focus-visible{outline:none; box-shadow:0 0 0 2px var(--ring) inset;}
+
+.pj-grid .pj-ghrow td{background:var(--surface-2); padding:8px 12px;}
+.pj-grid .pj-ghrow .pj-ld{font-weight:650; font-size:14px;}
+.pj-grid .pj-ghrow .pj-pit{font-size:12.5px; color:var(--muted); margin-left:6px;}
+.pj-grid th.kini, .pj-grid td.kini{background:var(--warning-soft);}
+.pj-grid th.kini{color:var(--text); font-weight:650;}
+.pj-grid .pj-rowrit,.pj-grid .pj-rowvol{font-weight:600; color:var(--muted);}
