@@ -70,9 +70,8 @@ window.APP_CONFIG = {
   TARGETS: { PC400: { bcm: 200, rit: 16 }, PC300: { bcm: 200, rit: 16 }, PC200: { bcm: 70, rit: 0 } },
 
   // Akun terdaftar (mode lokal): NRP -> { pw, nama }.
-  // NRP tak terdaftar memakai password default "admin" (nama = NRP).
-  // CATATAN KEAMANAN: file ini publik di GitHub — password di sini bisa dilihat siapa saja.
-  ACCOUNTS: {
-    "13250057": { pw: "Dev", nama: "Muh Taufik Hidayat" },
-  },
+  // Tidak ada kredensial di berkas ini. Berkas ini publik di GitHub, jadi
+  // apa pun yang ditulis di sini terbaca siapa saja. Password ditetapkan saat
+  // pemakaian pertama pada tiap peramban dan hanya tersimpan sebagai sidik
+  // SHA-256 bergaram di localStorage — lihat assets/store.js.
 };

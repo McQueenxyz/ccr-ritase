@@ -151,6 +151,25 @@
     return api;
   }
   // Dialog konfirmasi milik app (pengganti window.confirm yang sering diblokir)
+  // Untuk tindakan yang tidak bisa dibatalkan: pengguna harus mengetik kata
+  // kuncinya, bukan sekadar mengklik. Mencegah klik reflek pada tombol merah.
+  function ketikUntukHapus(pesan, kata, onYes) {
+    const body = `<p style="color:var(--muted); margin:-4px 0 14px">${esc(pesan)}</p>
+      <p style="margin:0 0 8px; font-size:13.5px">Ketik <b>${esc(kata)}</b> untuk melanjutkan:</p>
+      <input id="kh-in" autocomplete="off" spellcheck="false" placeholder="${esc(kata)}" style="width:100%; margin-bottom:14px">
+      <div class="modal-actions">
+        <button class="btn danger block" data-act="kh-yes" disabled>${esc(kata)}</button>
+        <button class="btn block" data-act="kh-no">Batal</button>
+      </div>`;
+    const mo = openModal("Konfirmasi", body);
+    const inp = mo.root.querySelector("#kh-in");
+    const ya = mo.root.querySelector('[data-act="kh-yes"]');
+    inp.addEventListener("input", () => { ya.disabled = inp.value.trim().toUpperCase() !== kata.toUpperCase(); });
+    ya.onclick = async () => { if (ya.disabled) return; mo.close(); await onYes(); };
+    mo.root.querySelector('[data-act="kh-no"]').onclick = mo.close;
+    setTimeout(() => inp.focus(), 60);
+    return mo;
+  }
   function confirmModal(msg, onYes, yesLabel) {
     const body = `<p style="color:var(--muted); margin:-4px 0 18px">${esc(msg)}</p>
       <div class="modal-actions">
@@ -164,7 +183,7 @@
 
   /* ---------- ROUTER ---------- */
   async function route() {
-    if (!state.user) { unmountSidebar(); return renderLogin(); }
+    if (!state.user) { unmountSidebar(); return await renderLogin(); }
     if (window.AnimatedGradient) window.AnimatedGradient.destroyAll();
     setTimeout(mountSidebar, 0); // sinkronkan menu aktif tiap pindah halaman
     if (!state.master) state.master = await Store.getMaster();
@@ -185,8 +204,11 @@
   }
 
   /* ---------- LOGIN ---------- */
-  function renderLogin() {
-    const hint = Store.mode === "supabase" ? "Login memakai akun Supabase." : "Mode lokal — password default: admin";
+  async function renderLogin() {
+    const sudahAda = await Store.adaAkun();
+    const hint = Store.mode === "supabase" ? "Login memakai akun Supabase."
+      : sudahAda ? "Mode lokal — password tersimpan di peramban ini saja."
+      : "Peramban ini belum punya akun. Masukkan NRP, lalu tetapkan password Anda sendiri.";
     app.innerHTML = `<div class="login-wrap"><div class="login-box">
       <div class="login-logo">${LOGO_SVG}</div>
       <h1 class="login-title">Masuk dengan<br>Akun CCR</h1>
@@ -197,11 +219,11 @@
           <button type="submit" id="lg-arrow" class="login-arrow" aria-label="Lanjut">${icon("next", 16)}</button>
         </div>
         <div class="login-field hidden" id="fld-pw">
-          <input id="lg-pw" class="login-input" type="password" placeholder="Password" autocomplete="off" />
+          <input id="lg-pw" class="login-input" type="password" placeholder="${sudahAda ? "Password" : "Buat password baru (min. 4 karakter)"}" autocomplete="off" />
         </div>
         <div id="lg-err" class="login-err hidden">Periksa informasi akun yang Anda masukkan dan coba lagi.</div>
         <div id="lg-back" class="login-back hidden"><a data-act="lg-reset">‹ Ganti NRP</a></div>
-        <button type="submit" id="lg-login" class="btn primary block login-btn hidden">Login</button>
+        <button type="submit" id="lg-login" class="btn primary block login-btn hidden">${sudahAda ? "Login" : "Buat Password"}</button>
       </form>
       <div class="login-hint">${hint}</div>
       <div class="login-foot">Hak Cipta © 2026 CCR · PT Antareja Mahada Makmur — Site Vale</div>
@@ -225,8 +247,19 @@
     }
     async function doLogin() {
       showErr(false);
-      try { state.user = await Store.signIn(nrp, pwIn.value); location.hash = "#/"; route(); }
-      catch (e) { showErr(true); pwIn.focus(); if (pwIn.select) pwIn.select(); }
+      try {
+        state.user = sudahAda
+          ? await Store.signIn(nrp, pwIn.value)
+          : await Store.daftarAkun(nrp, pwIn.value, nrp);
+        location.hash = "#/";
+        route();
+      } catch (e) {
+        // Menyebut sebabnya, bukan sekadar "periksa informasi akun".
+        err.textContent = e && e.message ? e.message : "Periksa informasi akun yang Anda masukkan dan coba lagi.";
+        showErr(true);
+        pwIn.focus();
+        if (pwIn.select) pwIn.select();
+      }
     }
     nrpIn.addEventListener("input", () => showErr(false));
     pwIn.addEventListener("input", () => showErr(false));
@@ -2137,7 +2170,18 @@
           el.disabled = false; el.innerHTML = "Impor Sekarang";
         }
         break; }
-      case "wipe-all": confirmModal("HAPUS SEMUA data ritase, fleet, dan loss? Tindakan ini tidak bisa dibatalkan.", async () => { const n = await Store.clearAll(); renderImport(); notif("ok", "Semua data dihapus", `${fmtNum(n)} loader beserta fleet dan loss-nya dihapus. Data Master tetap utuh.`); }, "Ya, hapus semua"); break;
+      case "wipe-all":
+        ketikUntukHapus(
+          "Seluruh data ritase, fleet, dan loss akan dihapus dan tidak bisa dikembalikan. Cadangan keadaan sekarang akan diunduh lebih dulu secara otomatis.",
+          "HAPUS",
+          async () => {
+            await unduhCadangan(true); // jaring pengaman: keadaan sekarang tersimpan dulu
+            const n = await Store.clearAll();
+            renderImport();
+            notif("ok", "Semua data dihapus", `${fmtNum(n)} loader beserta fleet dan loss-nya dihapus. Cadangan sudah diunduh, Data Master tetap utuh.`);
+          }
+        );
+        break;
       case "prod-bulan": { const d = new Date(state.prodTo || todayISO()); const p = (n) => String(n).padStart(2, "0"); const y = d.getFullYear(), mo = d.getMonth(); state.prodFrom = `${y}-${p(mo + 1)}-01`; state.prodTo = `${y}-${p(mo + 1)}-${p(new Date(y, mo + 1, 0).getDate())}`; renderProduksi(); break; }
       case "ms-add": await msAdd(el.getAttribute("data-kind")); break;
       case "ms-del": { const k = el.getAttribute("data-kind"), kunci = el.getAttribute("data-key"), ix = +el.getAttribute("data-i"); confirmModal("Hapus item ini dari Data Master?", async () => { await msDel(k, kunci != null ? kunci : ix); }); break; }
