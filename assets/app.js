@@ -358,6 +358,7 @@
       return `<div class="bcol"><div class="bval">${v || ""}</div><div class="btrack"><div class="bfill" style="height:${pct}%"></div></div><div class="blbl">${j.slice(0, 2)}</div></div>`;
     }).join("");
     app.innerHTML = `${appbar({ menu: true, crumb: "Dashboard" })}<div class="container">
+      ${peringatanCadangan()}
       <div class="dash-hi">Halo, <b>${esc(state.user.nama)}</b> 👋</div>
       <div class="toolbar">
         <div><label>Tanggal</label><input type="date" id="d-tgl" value="${state.tanggal}"></div>
@@ -464,6 +465,101 @@
       m.delay = m.delay || []; if (!m.delay.includes(desc)) m.delay.push(desc);
       await Store.saveMaster(m); toast("Delay ditambahkan"); mo.close(); renderDelay();
     };
+  }
+
+  /* ---------- CADANGAN DATA ----------
+     Seluruh catatan produksi hanya hidup di peramban ini. Tanpa salinan
+     keluar, membersihkan data situs atau berganti komputer berarti hilang
+     semuanya. Cadangan disimpan sebagai satu berkas JSON yang bisa
+     dipulihkan kapan saja. */
+  const CADANGAN_KEY = "ccr_cadangan_terakhir";
+  function cadanganTerakhir() {
+    try { return num(localStorage.getItem(CADANGAN_KEY)) || null; } catch (_) { return null; }
+  }
+  function catatCadangan() {
+    try { localStorage.setItem(CADANGAN_KEY, String(Date.now())); } catch (_) { /* mode privat */ }
+  }
+  function umurCadanganHari() {
+    const t = cadanganTerakhir();
+    return t ? Math.floor((Date.now() - t) / 86400000) : null;
+  }
+  function stempelWaktu() {
+    const d = new Date(), p2 = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}_${p2(d.getHours())}${p2(d.getMinutes())}`;
+  }
+  function peringatanCadangan() {
+    const u = umurCadanganHari();
+    if (u !== null && u <= 7) return "";
+    const judul = u === null ? "Data ini belum pernah dicadangkan" : `Cadangan terakhir ${u} hari lalu`;
+    return `<div class="banner warn">
+      <span class="bic">${icon("alert", 22)}</span>
+      <div class="btxt"><div class="t">${judul}</div><div class="d">Seluruh catatan hanya tersimpan di peramban ini. Membersihkan data situs akan menghapusnya.</div></div>
+      <div class="bacts"><button class="bcta" data-act="cadangan-unduh">Unduh sekarang</button></div>
+    </div>`;
+  }
+  async function unduhCadangan(diam) {
+    const isi = await Store.dumpAll();
+    const paket = {
+      aplikasi: "CCR",
+      versi_format: 1,
+      dibuat: new Date().toISOString(),
+      oleh: (state.user && state.user.nrp) || "-",
+      jumlah: {
+        loaders: (isi.loaders || []).length,
+        haulers: (isi.haulers || []).length,
+        losses: (isi.losses || []).length,
+      },
+      data: isi,
+    };
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(paket)], { type: "application/json" }));
+    a.download = `ccr-cadangan_${stempelWaktu()}.json`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    catatCadangan();
+    if (!diam) toast(`Cadangan diunduh — ${paket.jumlah.loaders} loader, ${paket.jumlah.haulers} hauler`);
+    return paket;
+  }
+  // Memeriksa berkas cadangan sebelum dipulihkan. Menolak yang bukan cadangan CCR.
+  function periksaCadangan(teks) {
+    let obj;
+    try { obj = JSON.parse(teks); } catch (_) { return { ok: false, pesan: "Berkas ini bukan JSON yang sah." }; }
+    if (!obj || typeof obj !== "object") return { ok: false, pesan: "Isi berkas tidak dikenali." };
+    const d = obj.data || obj;
+    if (!Array.isArray(d.loaders) || !Array.isArray(d.haulers) || !Array.isArray(d.losses)) {
+      return { ok: false, pesan: "Berkas ini bukan cadangan CCR — bagian loaders/haulers/losses tidak lengkap." };
+    }
+    const idLoader = new Set(d.loaders.map((l) => l && l.id));
+    const yatim = d.haulers.filter((h) => !idLoader.has(h && h.loader_id)).length;
+    return {
+      ok: true,
+      data: d,
+      dibuat: obj.dibuat || null,
+      jumlah: { loaders: d.loaders.length, haulers: d.haulers.length, losses: d.losses.length },
+      yatim,
+    };
+  }
+  async function pulihkanDariBerkas(file) {
+    const teks = await file.text();
+    const cek = periksaCadangan(teks);
+    if (!cek.ok) { toast(cek.pesan); return null; }
+    const ket = `${cek.jumlah.loaders} loader, ${cek.jumlah.haulers} hauler, ${cek.jumlah.losses} loss` +
+      (cek.dibuat ? ` — dibuat ${fmtID(String(cek.dibuat).slice(0, 10))}` : "") +
+      (cek.yatim ? ` — ${cek.yatim} hauler tanpa loader akan ikut terbawa` : "");
+    return new Promise((selesai) => {
+      confirmModal(
+        `Pulihkan cadangan ini? Seluruh data yang ada sekarang akan diganti.\n\n${ket}`,
+        async () => {
+          await unduhCadangan(true); // amankan keadaan sekarang sebelum ditimpa
+          const hasil = await Store.restoreAll(cek.data);
+          state.master = null;
+          toast(`Dipulihkan — ${hasil.loaders} loader, ${hasil.haulers} hauler`);
+          selesai(hasil);
+          route();
+        },
+        "Ya, pulihkan"
+      );
+    });
   }
 
   /* ---------- PAPAN JAM ----------
@@ -697,7 +793,9 @@
     const nowJam = (state.tanggal === todayISO() && jams.includes(njRaw)) ? njRaw : null;
     const totalRit = Object.values(cntR).reduce((a, b) => a + b, 0);
     // "belum" = jam-ini kosong DAN target produksi belum tercapai
-    const belum = nowJam ? loaders.filter((l) => !(num((ritLJ[l.id] || {})[nowJam]) > 0) && !reached(l)).length : null;
+    // Jam kosong tetap jam kosong. Sebelumnya loader yang sudah melewati target
+    // dikecualikan, sehingga jam yang belum diisi berhenti diingatkan.
+    const belum = nowJam ? loaders.filter((l) => !(num((ritLJ[l.id] || {})[nowJam]) > 0)).length : null;
     const shiftOpts = state.master.shifts.map((s) => `<option value="${s.kode}" ${s.kode === state.shift ? "selected" : ""}>${esc(s.label)}</option>`).join("");
     // ---- Papan Shift: ringkasan + matriks Loader × Jam ----
     let papan = "";
@@ -1682,6 +1780,15 @@
     app.innerHTML = `${appbar({ crumb: "Setting · Data Master" })}<div class="container">
       ${pageHead("Data Master", "Daftar pilihan yang muncul di seluruh formulir: pengawas, material, kode loss, dan lokasi.", `<button class="btn" data-act="reset-master">Kembalikan Default</button>`)}
 
+      <div class="card sect"><div class="sect-h"><span>Cadangan Data</span>${umurCadanganHari() === null ? `<span class="chip bad">Belum pernah</span>` : umurCadanganHari() > 7 ? `<span class="chip bad">${umurCadanganHari()} hari lalu</span>` : `<span class="chip">${umurCadanganHari() === 0 ? "hari ini" : umurCadanganHari() + " hari lalu"}</span>`}</div><div class="sect-b">
+        <p class="hint" style="margin:0 0 12px">Seluruh catatan produksi hanya tersimpan di peramban ini. Unduh cadangan secara berkala — terutama sebelum mengimpor atau menghapus data.</p>
+        <div class="actions">
+          <button class="btn primary" data-act="cadangan-unduh">${icon("download", 16)} Unduh Cadangan</button>
+          <button class="btn" data-act="cadangan-pulih">Pulihkan dari Berkas</button>
+          <input type="file" id="file-cadangan" accept="application/json,.json" style="display:none">
+        </div>
+      </div></div>
+
       <div class="card sect"><div class="sect-h"><span>Plan Bulanan (BCM)</span><span class="chip">${Object.keys(m.plan_bulanan || {}).length}</span></div><div class="sect-b">
         <div class="hint" style="margin-bottom:10px">Target per shift dihitung otomatis: plan bulan ÷ jumlah hari ÷ 2 shift. Cukup diperbarui sekali tiap awal bulan.</div>
         ${Object.keys(m.plan_bulanan || {}).length
@@ -1982,6 +2089,15 @@
       case "del-loader": confirmModal("Hapus loader ini beserta semua hauler & loss-nya?", async () => { await Store.deleteLoader(id); toast("Loader dihapus"); renderLoaders(); }); break;
       case "open-loader": state.detailTab = "fleet"; location.hash = "#/loader/detail/" + id; break;
       case "open-ritase": state.detailTab = "ritase"; location.hash = "#/loader/detail/" + id; break;
+      case "cadangan-unduh": await unduhCadangan(); route(); break;
+      case "cadangan-pulih": {
+        const f = document.getElementById("file-cadangan");
+        if (!f) break;
+        f.value = "";
+        f.onchange = async () => { if (f.files && f.files[0]) await pulihkanDariBerkas(f.files[0]); };
+        f.click();
+        break;
+      }
       case "isi-loader": location.hash = "#/form"; break;
       case "ke-form": location.hash = "#/form"; break;
       case "isi-jam": { const j = el.getAttribute("data-jam"); if (j) state.jam = j; location.hash = "#/jam"; break; }

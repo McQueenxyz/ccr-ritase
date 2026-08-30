@@ -47,7 +47,7 @@ window.APP_CONFIG = {
   // BELUM TERVALIDASI. Sumber DPR Agustus 2026 menyebut dua versi berbeda
   // (200/160/90 pada tabel per unit, 205/166/90 pada blok ringkasan) dan
   // keduanya tidak cocok dengan angka di bawah. Menunggu berkas plan resmi.
-  PLAN_PDTY_MODEL: { PC400: { ob: 200, ore: 334 }, PC300: { ob: 158, ore: 158 }, PC200: { ob: 70, ore: 70 } },
+  PLAN_PDTY_MODEL: { PC400: { ob: 200, ore: 334 }, PC300: { ob: 158, ore: 158 }, PC200: { ob: 90, ore: 90 } },
   PLAN_PDTY_UNIT: { E5314: { ore: 158 }, E5312: { ore: 210 }, E5422: { ore: 334 } },
 
   // PLAN LOSS per unit — diambil dari DPR Waterfall (basis 31 hari, MOHH 744 jam).

@@ -112,6 +112,20 @@
       const ids = new Set(loaders.map((l) => l.id));
       return { loaders, haulers: db.haulers.filter((h) => ids.has(h.loader_id)), losses: db.losses.filter((x) => ids.has(x.loader_id)) };
     },
+    // ---- Cadangan penuh: seluruh isi basis data apa adanya ----
+    async dumpAll() {
+      const db = this._load();
+      return { master: db.master, loaders: db.loaders, haulers: db.haulers, losses: db.losses };
+    },
+    async restoreAll(data) {
+      const db = this._load();
+      if (data.master) db.master = data.master;
+      db.loaders = Array.isArray(data.loaders) ? data.loaders : [];
+      db.haulers = Array.isArray(data.haulers) ? data.haulers : [];
+      db.losses = Array.isArray(data.losses) ? data.losses : [];
+      this._save(db);
+      return { loaders: db.loaders.length, haulers: db.haulers.length, losses: db.losses.length };
+    },
     // Hapus SEMUA data ritase (master & sesi tetap).
     async clearAll() {
       const db = this._load();
@@ -201,6 +215,32 @@
         losses = (await this.sb.from("losses").select("*").in("loader_id", ids)).data || [];
       }
       return { loaders, haulers, losses };
+    },
+    async dumpAll() {
+      const master = await this.getMaster();
+      const loaders = (await this.sb.from("loaders").select("*")).data || [];
+      const haulers = (await this.sb.from("haulers").select("*")).data || [];
+      const losses = (await this.sb.from("losses").select("*")).data || [];
+      return { master, loaders, haulers, losses };
+    },
+    async restoreAll(data) {
+      if (data.master) await this.saveMaster(data.master);
+      await this.clearAll();
+      const sisip = async (tabel, baris) => {
+        for (let i = 0; i < baris.length; i += 500) {
+          const { error } = await this.sb.from(tabel).insert(baris.slice(i, i + 500));
+          if (error) throw new Error(tabel + ": " + error.message);
+        }
+      };
+      // urutan wajib: induk dulu, sebab haulers & losses mengacu ke loader_id
+      await sisip("loaders", Array.isArray(data.loaders) ? data.loaders : []);
+      await sisip("haulers", Array.isArray(data.haulers) ? data.haulers : []);
+      await sisip("losses", Array.isArray(data.losses) ? data.losses : []);
+      return {
+        loaders: (data.loaders || []).length,
+        haulers: (data.haulers || []).length,
+        losses: (data.losses || []).length,
+      };
     },
     async clearAll() {
       const { count } = await this.sb.from("loaders").select("*", { count: "exact", head: true });

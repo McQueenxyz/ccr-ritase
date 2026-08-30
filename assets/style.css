@@ -629,3 +629,9 @@ tr.foot td.sticky-col{z-index:3;}
 .pj-grid .pj-in{width:52px; padding:6px 7px; font-size:15px;}
 .pj-grid th.num,.pj-grid td.num{white-space:nowrap;}
 .pj-grid .sticky-col{padding-left:12px; padding-right:10px;}
+
+/* Peringatan cadangan — nada beda dari spanduk jam agar tidak tertukar */
+.banner.warn{background:var(--warning-soft); box-shadow:0 0 0 1px var(--warning) inset;}
+.banner.warn .bic{color:var(--warning);}
+.banner.warn .bcta{background:var(--warning); color:#171717; border-color:var(--warning);}
+.chip.bad{background:var(--danger-soft); color:var(--danger);}
