@@ -622,3 +622,10 @@ tr.foot td.sticky-col{z-index:3;}
 .pj-grid th.kini, .pj-grid td.kini{background:var(--warning-soft);}
 .pj-grid th.kini{color:var(--text); font-weight:650;}
 .pj-grid .pj-rowrit,.pj-grid .pj-rowvol{font-weight:600; color:var(--muted);}
+
+/* Grid Papan Jam memuat 12 kolom jam + 2 kolom total dalam satu layar:
+   kotak dipersempit dan padding dirapatkan supaya ΣRit/ΣVol tidak terpotong. */
+.pj-grid td,.pj-grid th{padding:5px 6px;}
+.pj-grid .pj-in{width:52px; padding:6px 7px; font-size:15px;}
+.pj-grid th.num,.pj-grid td.num{white-space:nowrap;}
+.pj-grid .sticky-col{padding-left:12px; padding-right:10px;}
