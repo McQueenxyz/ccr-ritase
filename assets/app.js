@@ -22,6 +22,8 @@
   // Kode SS6: pakai kode dari Data Master dulu (bisa diedit user), fallback ke tabel bawaan.
   function resolveCode(type, label) {
     const m = state.master || {};
+    // Seluruh breakdown memakai kode SS6 B01, apa pun kategorinya.
+    if (type === "breakdown") return { code: "B01", desc: label || "BREAKDOWN" };
     const map = type === "problem" ? m.problem_codes : type === "idle" ? m.idle_codes : m.delay_codes;
     const c = map && map[label];
     if (c) return { code: c, desc: label };
@@ -815,8 +817,10 @@
     const lossLJ = {};
     losses.forEach((x) => {
       const lj = lossLJ[x.loader_id] = lossLJ[x.loader_id] || {};
-      const mp = lj[x.jam] = lj[x.jam] || { delay: 0, idle: 0, items: [] };
-      if (x.type === "idle") mp.idle += num(x.duration); else if (x.type === "delay") mp.delay += num(x.duration);
+      const mp = lj[x.jam] = lj[x.jam] || { delay: 0, idle: 0, breakdown: 0, items: [] };
+      if (x.type === "idle") mp.idle += num(x.duration);
+      else if (x.type === "breakdown") mp.breakdown += num(x.duration);
+      else if (x.type === "delay") mp.delay += num(x.duration);
       mp.items.push({ type: x.type, cat: x.category, dur: num(x.duration), rem: x.remark });
     });
     const tgtOf = (kode) => (CFG.TARGETS || {})[(CFG.UNIT_MODEL || {})[kode]] || null;
@@ -873,6 +877,7 @@
             <div class="title">${esc(l.loader)}</div>
             <div class="meta"><span>PIT ${esc(l.pit || "-")}</span><span>GL: ${esc(l.gl_pit || "-")}</span>
               <span class="chip">${cntH[l.id] || 0} hauler</span>
+              <span class="chip ${(l.fleet || "main") === "extra" ? "wait" : ""}">${(l.fleet || "main") === "extra" ? "EXTRA" : "MAIN"}</span>
               <span class="chip ${reached(l) ? "ok" : ""}">${cntR[l.id] || 0}${(tgtOf(l.loader) && tgtOf(l.loader).rit) ? "/" + tgtOf(l.loader).rit : ""} rit${reached(l) ? " ✓" : ""}</span>
               <span class="chip">${Math.round(bcmR[l.id] || 0)}${tgtOf(l.loader) ? "/" + tgtOf(l.loader).bcm : ""} BCM</span></div>
           </div>
@@ -901,9 +906,11 @@
     if (!base) {
       // prefill header (area/PIT/GL) dari loader terakhir di shift ini (Masalah 1)
       const list = await Store.listLoaders(state.tanggal, state.shift);
-      const last = list[list.length - 1];
-      base = last ? { loader: "", pengawas: last.pengawas, pengawas_nama: last.pengawas_nama, area: last.area, pit: last.pit, gl_pit: last.gl_pit, gl_road: last.gl_road, gl_disposal: last.gl_disposal }
-                  : { loader: "", pengawas: "", pengawas_nama: "", area: m.areas[0], pit: m.pits[0], gl_pit: m.gl_pit[0], gl_road: m.gl_road[0], gl_disposal: m.gl_disposal[0] };
+      // Prasetel dari loader yang PALING BARU dibuat. listLoaders mengurutkan
+      // menurut abjad, jadi elemen terakhir bukan yang terakhir ditambahkan.
+      const last = list.slice().sort((x, y) => num(x.created_at) - num(y.created_at)).pop();
+      base = last ? { loader: "", pengawas: last.pengawas, pengawas_nama: last.pengawas_nama, area: last.area, pit: last.pit, gl_pit: last.gl_pit, gl_road: last.gl_road, gl_disposal: last.gl_disposal, fleet: last.fleet || "main" }
+                  : { loader: "", pengawas: "", pengawas_nama: "", area: m.areas[0], pit: m.pits[0], gl_pit: m.gl_pit[0], gl_road: m.gl_road[0], gl_disposal: m.gl_disposal[0], fleet: "main" };
     }
     const loaderOpts = `<option value="">— pilih loader —</option>` + m.loaders.map((l) => `<option value="${esc(l.kode)}" ${l.kode === base.loader ? "selected" : ""}>${esc(l.kode)}</option>`).join("");
     const pgNames = pengawasList().map((p) => p.nama);
@@ -919,6 +926,12 @@
         <div class="field"><label>GL Road</label><select id="m-glroad">${glOpt(base.gl_road)}</select></div>
         <div class="field"><label>GL Disposal</label><select id="m-gldisp">${glOpt(base.gl_disposal)}</select></div>
       </div>
+      <div class="field"><label>Fleet <span class="hint" style="margin:0">— dari daily digging plan</span></label>
+        <select id="m-fleet">
+          <option value="main" ${(base.fleet || "main") === "main" ? "selected" : ""}>Main Fleet</option>
+          <option value="extra" ${base.fleet === "extra" ? "selected" : ""}>Extra Fleet</option>
+        </select>
+      </div>
       <div class="modal-actions"><button class="btn primary block" data-act="save-loader">Simpan</button><button class="btn block" data-act="cancel">Batal</button></div>`;
     const isEdit = !!(existing && existing.id);
     const mo = openModal(isEdit ? "Edit Loader" : "Tambah Loader", body);
@@ -928,7 +941,8 @@
       return { tanggal: state.tanggal, shift: state.shift, loader: mo.root.querySelector("#m-loader").value,
         pengawas: pengawasNrp(glpit), pengawas_nama: glpit,
         area: mo.root.querySelector("#m-area").value, pit: mo.root.querySelector("#m-pit").value,
-        gl_pit: glpit, gl_road: mo.root.querySelector("#m-glroad").value, gl_disposal: mo.root.querySelector("#m-gldisp").value };
+        gl_pit: glpit, gl_road: mo.root.querySelector("#m-glroad").value, gl_disposal: mo.root.querySelector("#m-gldisp").value,
+        fleet: mo.root.querySelector("#m-fleet").value };
     };
     const doSave = async (silent) => {
       if (saved) return;
@@ -1103,7 +1117,7 @@
     const jams = jamListFor(l.shift);
     const order = (a, b) => jams.indexOf(a.jam) - jams.indexOf(b.jam);
     const sorted = losses.slice().sort(order);
-    const typeLabel = (t) => ({ problem: "Problem", idle: "Idle", delay: "Delay" }[t] || t);
+    const typeLabel = (t) => ({ problem: "Problem", idle: "Idle", delay: "Delay", breakdown: "Breakdown" }[t] || t);
     const total = losses.reduce((a, x) => a + num(x.duration), 0);
     const rows = sorted.length ? sorted.map((x) => `<tr>
         <td class="num">${esc(x.jam)}</td><td><span class="chip">${typeLabel(x.type)}</span></td><td>${esc(x.category)}</td>
@@ -1119,7 +1133,7 @@
     const m = state.master;
     const jams = jamListFor(shift);
     const d = existing || { jam: jams[0], type: "delay", category: "", duration: 30, remark: "" };
-    const catFor = (t) => (t === "problem" ? m.problems : t === "idle" ? m.idle : m.delay);
+    const catFor = (t) => (t === "problem" ? m.problems : t === "idle" ? m.idle : t === "breakdown" ? (m.breakdown || []) : m.delay);
     const body = `
       <div class="row2">
         <div class="field"><label>Jam</label><select id="l-jam">${optionList(jams, d.jam)}</select></div>
@@ -1127,6 +1141,7 @@
           <option value="problem" ${d.type === "problem" ? "selected" : ""}>Problem</option>
           <option value="idle" ${d.type === "idle" ? "selected" : ""}>Idle</option>
           <option value="delay" ${d.type === "delay" ? "selected" : ""}>Delay</option>
+          <option value="breakdown" ${d.type === "breakdown" ? "selected" : ""}>Breakdown</option>
         </select></div>
       </div>
       <div class="field"><label>Kategori</label><select id="l-cat">${optionList(catFor(d.type), d.category)}</select></div>
@@ -1285,7 +1300,7 @@
       return `<tr class="cls-main"><td><b>${esc(c.label)}</b></td><td class="num">${fmtNum(c.rit)}</td><td class="num"><b>${fmtNum(Math.round(c.bcm))}</b></td><td class="num">${pct.toFixed(1)}%</td></tr>`
         + (showSub ? subs.map((s) => `<tr class="cls-sub"><td>${esc(s)}</td><td class="num">${fmtNum(c.sub[s].rit)}</td><td class="num">${fmtNum(Math.round(c.sub[s].bcm))}</td><td></td></tr>`).join("") : "");
     }).join("") || `<tr><td colspan="4" class="empty">Tidak ada data pada rentang ini.</td></tr>`;
-    const tipeChip = (t) => `<span class="chip ${t === "problem" ? "" : t === "idle" ? "wait" : "loss"}">${esc((t || "").toUpperCase())}</span>`;
+    const tipeChip = (t) => `<span class="chip ${t === "problem" ? "" : t === "idle" ? "wait" : t === "breakdown" ? "bad" : "loss"}">${esc((t || "").toUpperCase())}</span>`;
     const cats = Object.keys(perLossCat).map((k) => perLossCat[k]).sort((a, b) => b.menit - a.menit);
     const rowsCat = cats.length ? cats.map((c) => `<tr><td>${esc(c.cat)}</td><td>${tipeChip(c.type)}</td><td>${esc(c.kode) || "—"}</td><td class="num">${fmtNum(c.n)}×</td><td class="num">${fmtNum(c.menit)}'</td></tr>`).join("")
       : `<tr><td colspan="5" class="empty">Tidak ada loss pada rentang ini.</td></tr>`;
@@ -1447,7 +1462,9 @@
     // ---- Plan vs Actual: Idle / Delay / Breakdown ----
     // Actual dikelompokkan per kode SS6; plan diskalakan ke MOHH yang tercatat.
     const mohhTotalH = Object.keys(perPC).reduce((a, k) => a + perPC[k].mohh, 0);
-    const grupOf = (type, code) => (String(code).toUpperCase() === "B01" ? "breakdown" : type === "idle" ? "idle" : "delay");
+    const grupOf = (type, code) =>
+      type === "breakdown" || String(code).toUpperCase() === "B01" ? "breakdown"
+      : type === "idle" ? "idle" : "delay";
     const actByCode = {};
     losses.forEach((x) => {
       const l = byId[x.loader_id]; if (!l) return;
@@ -1665,7 +1682,7 @@
         };
         if (isHPR) {
           const mnt = cIdle >= 0 ? num(r[cIdle]) : 0, code = cIdleC >= 0 ? String(r[cIdleC] || "").trim() : "";
-          if (mnt > 0) addLoss(/^I/i.test(code) ? "idle" : "delay", mnt, code);
+          if (mnt > 0) addLoss(/^B01$/i.test(code) ? "breakdown" : /^I/i.test(code) ? "idle" : "delay", mnt, code);
           if (cPT >= 0 && num(r[cPT]) > 0) addLoss("problem", num(r[cPT]), cPC >= 0 ? String(r[cPC] || "").trim() : "");
         } else {
           if (cDelay >= 0 && num(r[cDelay]) > 0) addLoss("delay", num(r[cDelay]), cDelayC >= 0 ? String(r[cDelayC] || "").trim() : "");

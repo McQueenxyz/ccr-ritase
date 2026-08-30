@@ -96,6 +96,21 @@ window.SEED = {
   ],
 
   // IDLE = kondisi berhenti (mesin sehat). Sesuai dokumen.
+  // Kategori breakdown mengikuti kolom "category" pada sheet BD di DPR.
+  // Seluruhnya diekspor ke SS6 sebagai kode B01.
+  breakdown: [
+    "Schedule (Preventive Maintenance)",
+    "Unschedule",
+    "Tyre",
+    "Engine",
+    "Hydraulic System",
+    "Electrical",
+    "Undercarriage",
+    "GET (Ground Engaging Tools)",
+    "Body & Cabin",
+    "Menunggu Unit Pengganti",
+  ],
+
   idle: [
     "Hujan",
     "Slippery",

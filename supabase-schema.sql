@@ -26,6 +26,7 @@ create table if not exists loaders (
   gl_pit        text,
   gl_road       text,
   gl_disposal   text,
+  fleet         text        not null default 'main',  -- main | extra, dari daily digging plan
   created_at    timestamptz not null default now()
 );
 
@@ -93,3 +94,6 @@ on conflict (id) do nothing;
 --     ke file config.js (SUPABASE_URL & SUPABASE_ANON_KEY),
 --     lalu ubah APP_MODE menjadi "supabase".
 -- ============================================================
+
+-- Migrasi bagi basis data yang dibuat sebelum kolom fleet ada:
+alter table loaders add column if not exists fleet text not null default 'main';
